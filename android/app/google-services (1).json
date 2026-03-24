@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "832508490629",
+    "project_id": "fitnessandposedetectionapp",
+    "storage_bucket": "fitnessandposedetectionapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:832508490629:android:480a5d30653e4ea1dc4aec",
+        "android_client_info": {
+          "package_name": "com.example.fitness_and_ai_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDD7WgpfDDOFfOqYyn_F7DRGxzxcWkhsNs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
