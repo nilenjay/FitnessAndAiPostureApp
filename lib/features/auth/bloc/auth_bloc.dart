@@ -13,9 +13,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   AuthBloc({required this.authRepository}) : super(AuthInitial()) {
     on<AuthStarted>(_onAuthStarted);
+    on<_UserChanged>(_onUserChanged);
+    on<_UserLoggedOut>(_onUserLoggedOut);
     on<AuthSignUpRequested>(_onSignUpRequested);
     on<AuthSignInRequested>(_onSignInRequested);
     on<AuthSignOutRequested>(_onSignOutRequested);
+  }
+
+  void _onUserChanged(_UserChanged event, Emitter<AuthState> emit) {
+    emit(AuthAuthenticated(event.user));
+  }
+
+  void _onUserLoggedOut(_UserLoggedOut event, Emitter<AuthState> emit) {
+    emit(AuthUnauthenticated());
   }
 
   void _onAuthStarted(AuthStarted event, Emitter<AuthState> emit) {

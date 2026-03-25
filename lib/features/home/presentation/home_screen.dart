@@ -55,7 +55,6 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: _BottomNav(),
     );
   }
 
@@ -275,33 +274,6 @@ class HomeScreen extends StatelessWidget {
           SizedBox(height: 12),
           Text('No workouts yet', style: TextStyle(color: AppTheme.textSecondary)),
           Text('Complete your first session to see activity', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12), textAlign: TextAlign.center),
-        ],
-      ),
-    );
-  }
-}
-
-class _BottomNav extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppTheme.divider))),
-      child: BottomNavigationBar(
-        currentIndex: 0,
-        type: BottomNavigationBarType.fixed,
-        onTap: (i) {
-          switch (i) {
-            case 0: context.go('/home'); break;
-            case 1: context.go('/workout/select'); break;
-            case 2: context.go('/plans'); break;
-            case 3: context.go('/history'); break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.videocam_outlined), label: 'Train'),
-          BottomNavigationBarItem(icon: Icon(Icons.auto_awesome_outlined), label: 'Plans'),
-          BottomNavigationBarItem(icon: Icon(Icons.history_outlined), label: 'History'),
         ],
       ),
     );

@@ -14,10 +14,12 @@ import '../../features/pose_detection/presentation/session_summary_screen.dart';
 import '../../features/workout_plans/presentation/workout_plans_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../widgets/main_shell_screen.dart';
 import '../widgets/splash_screen.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
+  static final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
   // Call this once in main.dart after BLoC is ready
   static GoRouter createRouter(AuthBloc authBloc) {
@@ -61,14 +63,32 @@ class AppRouter {
           path: '/signup',
           builder: (context, state) => const SignupScreen(),
         ),
-        GoRoute(
-          path: '/home',
-          builder: (context, state) => const HomeScreen(),
+
+        // Shell route: screens that share the bottom navigation bar
+        ShellRoute(
+          navigatorKey: _shellNavigatorKey,
+          builder: (context, state, child) => MainShellScreen(child: child),
+          routes: [
+            GoRoute(
+              path: '/home',
+              builder: (context, state) => const HomeScreen(),
+            ),
+            GoRoute(
+              path: '/workout/select',
+              builder: (context, state) => const ExerciseSelectScreen(),
+            ),
+            GoRoute(
+              path: '/plans',
+              builder: (context, state) => const WorkoutPlansScreen(),
+            ),
+            GoRoute(
+              path: '/history',
+              builder: (context, state) => const HistoryScreen(),
+            ),
+          ],
         ),
-        GoRoute(
-          path: '/workout/select',
-          builder: (context, state) => const ExerciseSelectScreen(),
-        ),
+
+        // Full-screen routes (no bottom nav)
         GoRoute(
           path: '/workout/session',
           builder: (context, state) {
@@ -82,14 +102,6 @@ class AppRouter {
             final data = state.extra as Map<String, dynamic>? ?? {};
             return SessionSummaryScreen(summaryData: data);
           },
-        ),
-        GoRoute(
-          path: '/plans',
-          builder: (context, state) => const WorkoutPlansScreen(),
-        ),
-        GoRoute(
-          path: '/history',
-          builder: (context, state) => const HistoryScreen(),
         ),
         GoRoute(
           path: '/profile',
