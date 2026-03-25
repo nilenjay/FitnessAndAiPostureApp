@@ -7,6 +7,7 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/pose_detection/bloc/pose_bloc.dart';
+import 'features/pose_detection/data/pose_repository.dart';
 import 'features/workout_plans/bloc/workout_plan_bloc.dart';
 import 'features/workout_plans/data/workout_plan_repository.dart';
 import 'firebase_options.dart';
@@ -47,11 +48,16 @@ class _MyAppState extends State<MyApp> {
       providers: [
         RepositoryProvider<AuthRepository>.value(value: _authRepository),
         RepositoryProvider<WorkoutPlanRepository>(create: (_) => WorkoutPlanRepository()),
+        RepositoryProvider<PoseRepository>(create: (_) => PoseRepository()),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<AuthBloc>.value(value: _authBloc),
-          BlocProvider<PoseBloc>(create: (_) => PoseBloc()),
+          BlocProvider<PoseBloc>(
+            create: (context) => PoseBloc(
+              poseRepository: context.read<PoseRepository>(),
+            ),
+          ),
           BlocProvider<WorkoutPlanBloc>(
             create: (context) => WorkoutPlanBloc(
               repository: context.read<WorkoutPlanRepository>(),
@@ -62,7 +68,6 @@ class _MyAppState extends State<MyApp> {
           title: 'AI Posture Coach',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.darkTheme,
-          // ✅ Pass authBloc so router can listen to its stream
           routerConfig: AppRouter.createRouter(_authBloc),
         ),
       ),

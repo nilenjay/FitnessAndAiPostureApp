@@ -4,11 +4,13 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import '../../../core/constants/app_constants.dart';
+import '../data/pose_repository.dart';
 
 part 'pose_event.dart';
 part 'pose_state.dart';
 
 class PoseBloc extends Bloc<PoseEvent, PoseState> {
+  final PoseRepository _poseRepository;
   final PoseDetector _poseDetector = PoseDetector(
     options: PoseDetectorOptions(
       mode: PoseDetectionMode.stream,
@@ -21,7 +23,9 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
   final List<String> _feedbackLog = [];
   bool _isProcessing = false;
 
-  PoseBloc() : super(PoseInitial()) {
+  PoseBloc({required PoseRepository poseRepository})
+      : _poseRepository = poseRepository,
+        super(PoseInitial()) {
     on<PoseCameraStarted>(_onCameraStarted);
     on<PoseCameraStopped>(_onCameraStopped);
     on<PoseImageProcessed>(_onImageProcessed);
@@ -72,8 +76,22 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
     }
   }
 
-  void _onSessionCompleted(PoseSessionCompleted event, Emitter<PoseState> emit) {
+  Future<void> _onSessionCompleted(PoseSessionCompleted event, Emitter<PoseState> emit) async {
     final score = _calculateScore();
+    
+    // Save to Firestore
+    try {
+      await _poseRepository.saveSession(
+        exercise: _exercise,
+        reps: _repCount,
+        score: score,
+        feedback: List.from(_feedbackLog),
+      );
+    } catch (e) {
+      // Log error but still show summary
+      print('Error saving session: $e');
+    }
+
     emit(PoseSessionDone(
       totalReps: _repCount,
       exercise: _exercise,
