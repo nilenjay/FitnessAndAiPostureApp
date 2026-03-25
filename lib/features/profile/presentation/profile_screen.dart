@@ -21,7 +21,8 @@ class ProfileScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout, color: AppTheme.error),
             onPressed: () {
-              context.read<AuthBloc>().add(AuthLoggedOut());
+              // Fixed event name to match auth_event.dart
+              context.read<AuthBloc>().add(AuthSignOutRequested());
               context.go('/login');
             },
           ),
@@ -82,7 +83,7 @@ class ProfileScreen extends StatelessWidget {
                       
                       const SizedBox(height: 32),
                       
-                      // AI Health Twin Preview (The "Wow" factor)
+                      // AI Health Twin Preview
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(20),

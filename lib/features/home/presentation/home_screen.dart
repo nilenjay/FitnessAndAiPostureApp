@@ -1,8 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../auth/bloc/auth_bloc.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -15,12 +18,8 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          children: [
-            Text('Good ${_greeting()}, $name 👋',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-          ],
-        ),
+        title: Text('Good ${_greeting()}, $name 👋',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_outline),
@@ -28,22 +27,32 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Start Workout CTA
-            _StartWorkoutCard(context),
-            const SizedBox(height: 24),
-            Text('Quick Actions', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 16),
-            _QuickActionsGrid(context),
-            const SizedBox(height: 24),
-            Text('Recent Activity', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 16),
-            _RecentActivityPlaceholder(),
-          ],
+      body: RefreshIndicator(
+        onRefresh: () async => {}, // Firestore streams handle this automatically
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // AI Health Twin Status (Quick view)
+              _AIStatusCard(user?.uid),
+              const SizedBox(height: 24),
+              
+              // Start Workout CTA
+              _StartWorkoutCard(context),
+              const SizedBox(height: 24),
+              
+              Text('Quick Actions', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 16),
+              _QuickActionsGrid(context),
+              const SizedBox(height: 24),
+              
+              Text('Recent Activity', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 16),
+              _RecentActivityList(user?.uid),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: _BottomNav(),
@@ -55,6 +64,48 @@ class HomeScreen extends StatelessWidget {
     if (hour < 12) return 'Morning';
     if (hour < 17) return 'Afternoon';
     return 'Evening';
+  }
+
+  Widget _AIStatusCard(String? uid) {
+    if (uid == null) return const SizedBox.shrink();
+    
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection(AppConstants.usersCollection).doc(uid).snapshots(),
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data() as Map<String, dynamic>? ?? {};
+        final sessions = data['totalSessions'] ?? 0;
+        final streak = data['streak'] ?? 0;
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.purpleAccent.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.purpleAccent.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.psychology, color: Colors.purpleAccent, size: 32),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('AI Health Twin', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purpleAccent)),
+                    Text(
+                      sessions > 0 ? 'Analyzing your $streak-day streak...' : 'Complete a workout to activate AI Twin',
+                      style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              if (sessions > 0)
+                const Icon(Icons.chevron_right, color: Colors.purpleAccent),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _StartWorkoutCard(BuildContext context) {
@@ -70,6 +121,13 @@ class HomeScreen extends StatelessWidget {
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF00E5FF).withOpacity(0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,8 +155,8 @@ class HomeScreen extends StatelessWidget {
 
   Widget _QuickActionsGrid(BuildContext context) {
     final actions = [
-      {'icon': Icons.auto_awesome, 'label': 'AI Plans', 'route': '/plans'},
-      {'icon': Icons.history, 'label': 'History', 'route': '/history'},
+      {'icon': Icons.auto_awesome, 'label': 'AI Plans', 'route': '/plans', 'color': AppTheme.secondary},
+      {'icon': Icons.history, 'label': 'History', 'route': '/history', 'color': AppTheme.primary},
     ];
 
     return Row(
@@ -117,7 +175,7 @@ class HomeScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(a['icon'] as IconData, color: AppTheme.primary, size: 28),
+                  Icon(a['icon'] as IconData, color: a['color'] as Color, size: 28),
                   const SizedBox(height: 12),
                   Text(
                     a['label'] as String,
@@ -135,7 +193,74 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _RecentActivityPlaceholder() {
+  Widget _RecentActivityList(String? uid) {
+    if (uid == null) return const SizedBox.shrink();
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection(AppConstants.usersCollection)
+          .doc(uid)
+          .collection(AppConstants.sessionsCollection)
+          .orderBy('timestamp', descending: true)
+          .limit(3)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return _EmptyActivityPlaceholder();
+        }
+
+        return Column(
+          children: snapshot.data!.docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final timestamp = data['timestamp'] != null ? (data['timestamp'] as Timestamp).toDate() : DateTime.now();
+            final exercise = data['exercise'] as String? ?? 'Workout';
+            final score = data['score'] as int? ?? 0;
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.divider),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.fitness_center, color: AppTheme.primary, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(exercise.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text(DateFormat('MMM dd • HH:mm').format(timestamp), style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    'Form: $score%',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: score >= 80 ? AppTheme.secondary : (score >= 50 ? AppTheme.primary : AppTheme.error),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _EmptyActivityPlaceholder() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
@@ -148,16 +273,8 @@ class HomeScreen extends StatelessWidget {
         children: [
           Icon(Icons.fitness_center, color: AppTheme.textSecondary, size: 40),
           SizedBox(height: 12),
-          Text(
-            'No workouts yet',
-            style: TextStyle(color: AppTheme.textSecondary),
-          ),
-          SizedBox(height: 4),
-          Text(
-            'Complete your first session to see activity here',
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
+          Text('No workouts yet', style: TextStyle(color: AppTheme.textSecondary)),
+          Text('Complete your first session to see activity', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12), textAlign: TextAlign.center),
         ],
       ),
     );
@@ -168,11 +285,10 @@ class _BottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppTheme.divider)),
-      ),
+      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppTheme.divider))),
       child: BottomNavigationBar(
         currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
         onTap: (i) {
           switch (i) {
             case 0: context.go('/home'); break;
@@ -185,7 +301,7 @@ class _BottomNav extends StatelessWidget {
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.videocam_outlined), label: 'Train'),
           BottomNavigationBarItem(icon: Icon(Icons.auto_awesome_outlined), label: 'Plans'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+          BottomNavigationBarItem(icon: Icon(Icons.history_outlined), label: 'History'),
         ],
       ),
     );
