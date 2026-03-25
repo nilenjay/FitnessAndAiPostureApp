@@ -2,7 +2,7 @@ class AppConstants {
   // Gemini
   static const String geminiModel = 'gemini-1.5-flash';
   // TODO: Move to .env or Firebase Remote Config before production
-  static const String geminiApiKey = 'YOUR_GEMINI_API_KEY';
+  static const String geminiApiKey = 'AIzaSyAvCLiTX-Ifuqa0QKoKTYzU20TJ3D9Bk9I';
 
   // Firestore Collections
   static const String usersCollection = 'users';
