@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:firebase_ai/firebase_ai.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
@@ -11,7 +11,7 @@ class WorkoutPlanRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final _uuid = const Uuid();
 
-  late final GenerativeModel _model = GenerativeModel.generative(
+  late final GenerativeModel _model = GenerativeModel(
     model: AppConstants.geminiModel,
     apiKey: AppConstants.geminiApiKey,
   );
@@ -31,8 +31,7 @@ class WorkoutPlanRepository {
       equipment: equipment,
     );
 
-    final content = [Content.text(prompt)];
-    final response = await _model.generateContent(content);
+    final response = await _model.generateContent([Content.text(prompt)]);
     final text = response.text ?? '';
 
     // Strip markdown fences if Gemini wraps in ```json

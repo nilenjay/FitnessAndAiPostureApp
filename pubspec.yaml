@@ -38,7 +38,7 @@ dependencies:
   go_router:
   google_mlkit_pose_detection:
   camera:
-  firebase_ai:
+  google_generative_ai: ^0.4.0
   uuid:
   intl:
 
