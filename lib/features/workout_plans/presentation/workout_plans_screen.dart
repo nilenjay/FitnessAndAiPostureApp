@@ -19,7 +19,10 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<WorkoutPlanBloc>().add(WorkoutPlanFetch());
+    final state = context.read<WorkoutPlanBloc>().state;
+    if (state is! WorkoutPlanLoaded) {
+      context.read<WorkoutPlanBloc>().add(WorkoutPlanFetch());
+    }
   }
 
   void _showGenerateSheet() {

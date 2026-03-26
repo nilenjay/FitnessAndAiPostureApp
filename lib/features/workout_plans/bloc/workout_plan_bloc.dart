@@ -23,6 +23,11 @@ class WorkoutPlanBloc extends Bloc<WorkoutPlanEvent, WorkoutPlanState> {
       WorkoutPlanGenerate event,
       Emitter<WorkoutPlanState> emit,
       ) async {
+    // Preserve existing plans to avoid unnecessary Firestore read deadlocks
+    final oldPlans = state is WorkoutPlanLoaded 
+        ? (state as WorkoutPlanLoaded).plans 
+        : <WorkoutPlan>[];
+
     emit(WorkoutPlanGenerating());
     try {
       final plan = await _repository.generatePlan(
@@ -33,25 +38,16 @@ class WorkoutPlanBloc extends Bloc<WorkoutPlanEvent, WorkoutPlanState> {
       );
       emit(WorkoutPlanGenerated(plan));
 
-      // Try to fetch all saved plans; if Firestore read fails, use just the new plan
-      try {
-        final plans = await _repository.fetchSavedPlans();
-        
-        // Ensure the newly generated plan is explicitly in the results
-        final localPlans = List<WorkoutPlan>.from(plans);
-        if (!localPlans.any((p) => p.id == plan.id)) {
-          localPlans.insert(0, plan);
-        }
-
-        emit(WorkoutPlanLoaded(
-          plans: localPlans,
-          selectedPlan: localPlans.isNotEmpty ? localPlans.first : plan,
-        ));
-      } catch (fetchError) {
-        debugPrint('⚠️ Firestore fetch failed after generate: $fetchError');
-        // Still show the generated plan even if fetch fails
-        emit(WorkoutPlanLoaded(plans: [plan], selectedPlan: plan));
+      // Append to the list natively without doing a Firestore fetch
+      final localPlans = List<WorkoutPlan>.from(oldPlans);
+      if (!localPlans.any((p) => p.id == plan.id)) {
+        localPlans.insert(0, plan);
       }
+
+      emit(WorkoutPlanLoaded(
+        plans: localPlans,
+        selectedPlan: plan,
+      ));
     } catch (e) {
       debugPrint('❌ Plan generation failed: $e');
       emit(WorkoutPlanError('Failed to generate plan: ${e.toString()}'));

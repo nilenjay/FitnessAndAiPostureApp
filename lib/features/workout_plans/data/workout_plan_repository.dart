@@ -174,13 +174,20 @@ Rules:
 
     try {
       debugPrint('📥 Fetching plans for user $uid');
-      final snapshot = await _firestore
+      // Use a timeout and fallback to cache to prevent pending writes from deadlocking the server fetch
+      final query = _firestore
           .collection(AppConstants.usersCollection)
           .doc(uid)
           .collection(AppConstants.workout_plansCollection)
           .orderBy('createdAt', descending: true)
-          .limit(10)
-          .get();
+          .limit(10);
+
+      final snapshot = await query
+          .get(const GetOptions(source: Source.serverAndCache))
+          .timeout(const Duration(seconds: 4), onTimeout: () async {
+        debugPrint('⚠️ Fetch timeout, falling back to cache...');
+        return await query.get(const GetOptions(source: Source.cache));
+      });
 
       debugPrint('📥 Got ${snapshot.docs.length} plan docs');
 
