@@ -106,7 +106,7 @@ class _GeneratingView extends StatelessWidget {
           SizedBox(width: 56, height: 56,
               child: CircularProgressIndicator(strokeWidth: 3, color: AppTheme.primary)),
           SizedBox(height: 24),
-          Text('Gemini is crafting your plan...',
+          Text('AI is crafting your plan...',
               style: TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
           SizedBox(height: 8),
           Text('Personalizing exercises just for you',
@@ -140,7 +140,7 @@ class _EmptyView extends StatelessWidget {
                 style: TextStyle(color: AppTheme.textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             const Text(
-              'Let Gemini AI generate a personalized workout plan tailored to your goals',
+              'Let AI generate a personalized workout plan tailored to your goals',
               style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
               textAlign: TextAlign.center,
             ),
@@ -244,14 +244,14 @@ class _PlanView extends StatelessWidget {
                 icon: const Icon(Icons.delete_outline, color: AppTheme.error, size: 20),
                 onPressed: () => showDialog(
                   context: context,
-                  builder: (_) => AlertDialog(
+                  builder: (dialogContext) => AlertDialog(
                     backgroundColor: AppTheme.surface,
                     title: const Text('Delete Plan', style: TextStyle(color: AppTheme.textPrimary)),
                     content: const Text('Are you sure?', style: TextStyle(color: AppTheme.textSecondary)),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                      TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
                       TextButton(
-                        onPressed: () { Navigator.pop(context); onDelete(selectedPlan.id); },
+                        onPressed: () { Navigator.pop(dialogContext); onDelete(selectedPlan.id); },
                         child: const Text('Delete', style: TextStyle(color: AppTheme.error)),
                       ),
                     ],

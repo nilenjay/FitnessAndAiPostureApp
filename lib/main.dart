@@ -1,19 +1,22 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/pose_detection/bloc/pose_bloc.dart';
 import 'features/pose_detection/data/pose_repository.dart';
+import 'features/chat/bloc/chat_bloc.dart';
+import 'features/chat/data/chat_repository.dart';
 import 'features/workout_plans/bloc/workout_plan_bloc.dart';
 import 'features/workout_plans/data/workout_plan_repository.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
@@ -49,6 +52,7 @@ class _MyAppState extends State<MyApp> {
         RepositoryProvider<AuthRepository>.value(value: _authRepository),
         RepositoryProvider<WorkoutPlanRepository>(create: (_) => WorkoutPlanRepository()),
         RepositoryProvider<PoseRepository>(create: (_) => PoseRepository()),
+        RepositoryProvider<ChatRepository>(create: (_) => ChatRepository()),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -61,6 +65,11 @@ class _MyAppState extends State<MyApp> {
           BlocProvider<WorkoutPlanBloc>(
             create: (context) => WorkoutPlanBloc(
               repository: context.read<WorkoutPlanRepository>(),
+            ),
+          ),
+          BlocProvider<ChatBloc>(
+            create: (context) => ChatBloc(
+              repository: context.read<ChatRepository>(),
             ),
           ),
         ],

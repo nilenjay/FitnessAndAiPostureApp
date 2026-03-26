@@ -1,12 +1,15 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class AppConstants {
-  // Gemini
-  static const String geminiModel = 'gemini-1.5-flash';
-  // TODO: Move to .env or Firebase Remote Config before production
-  static const String geminiApiKey = 'AIzaSyAvCLiTX-Ifuqa0QKoKTYzU20TJ3D9Bk9I';
+  // Groq
+  static const String groqModel = 'llama-3.3-70b-versatile';
+  static const String groqBaseUrl = 'https://api.groq.com/openai/v1/chat/completions';
+
+  static String get groqApiKey => dotenv.env['GROQ_API_KEY'] ?? '';
 
   // Firestore Collections
   static const String usersCollection = 'users';
-  static const String workoutPlansCollection = 'workout_plans';
+  static const String workout_plansCollection = 'workout_plans';
   static const String sessionsCollection = 'sessions';
 
   // Exercises supported by pose detection

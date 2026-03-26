@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:dio/dio.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/constants/app_constants.dart';
 import 'workout_plan_model.dart';
@@ -11,12 +12,15 @@ class WorkoutPlanRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final _uuid = const Uuid();
 
-  late final GenerativeModel _model = GenerativeModel(
-    model: AppConstants.geminiModel,
-    apiKey: AppConstants.geminiApiKey,
-  );
-
-  // ─── Generate plan via Gemini ─────────────────────────────────────────────
+  late final Dio _dio = Dio(BaseOptions(
+    baseUrl: 'https://api.groq.com',
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 60),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ${AppConstants.groqApiKey}',
+    },
+  ));
 
   Future<WorkoutPlan> generatePlan({
     required String goal,
@@ -31,10 +35,32 @@ class WorkoutPlanRepository {
       equipment: equipment,
     );
 
-    final response = await _model.generateContent([Content.text(prompt)]);
-    final text = response.text ?? '';
+    final response = await _dio.post(
+      '/openai/v1/chat/completions',
+      data: {
+        'model': AppConstants.groqModel,
+        'messages': [
+          {
+            'role': 'system',
+            'content':
+                'You are an expert fitness coach. Return ONLY valid JSON with no markdown fences or extra text.',
+          },
+          {
+            'role': 'user',
+            'content': prompt,
+          },
+        ],
+        'temperature': 0.7,
+        'max_tokens': 4096,
+        'response_format': {'type': 'json_object'},
+      },
+    );
 
-    // Strip markdown fences if Gemini wraps in ```json
+    final data = response.data as Map<String, dynamic>;
+    final text =
+        data['choices'][0]['message']['content'] as String? ?? '';
+
+    // Strip markdown fences if the model wraps in ```json
     final cleaned = text
         .replaceAll(RegExp(r'```json\s*'), '')
         .replaceAll(RegExp(r'```\s*'), '')
@@ -119,42 +145,80 @@ Rules:
 
   Future<void> _savePlan(WorkoutPlan plan) async {
     final uid = _auth.currentUser?.uid;
-    if (uid == null) return;
+    if (uid == null) {
+      debugPrint('⚠️ _savePlan: No user logged in');
+      return;
+    }
 
-    await _firestore
-        .collection(AppConstants.usersCollection)
-        .doc(uid)
-        .collection(AppConstants.workoutPlansCollection)
-        .doc(plan.id)
-        .set(plan.toJson());
+    try {
+      debugPrint('💾 Saving plan ${plan.id} for user $uid');
+      await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(uid)
+          .collection(AppConstants.workout_plansCollection)
+          .doc(plan.id)
+          .set(plan.toJson());
+      debugPrint('✅ Plan saved successfully');
+    } catch (e) {
+      debugPrint('❌ _savePlan error: $e');
+      rethrow;
+    }
   }
 
   Future<List<WorkoutPlan>> fetchSavedPlans() async {
     final uid = _auth.currentUser?.uid;
-    if (uid == null) return [];
+    if (uid == null) {
+      debugPrint('⚠️ fetchSavedPlans: No user logged in');
+      return [];
+    }
 
-    final snapshot = await _firestore
-        .collection(AppConstants.usersCollection)
-        .doc(uid)
-        .collection(AppConstants.workoutPlansCollection)
-        .orderBy('createdAt', descending: true)
-        .limit(10)
-        .get();
+    try {
+      debugPrint('📥 Fetching plans for user $uid');
+      final snapshot = await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(uid)
+          .collection(AppConstants.workout_plansCollection)
+          .orderBy('createdAt', descending: true)
+          .limit(10)
+          .get();
 
-    return snapshot.docs
-        .map((doc) => WorkoutPlan.fromJson(doc.data()))
-        .toList();
+      debugPrint('📥 Got ${snapshot.docs.length} plan docs');
+
+      final plans = <WorkoutPlan>[];
+      for (final doc in snapshot.docs) {
+        try {
+          plans.add(WorkoutPlan.fromJson(doc.data()));
+        } catch (parseError) {
+          debugPrint('⚠️ Failed to parse plan ${doc.id}: $parseError');
+        }
+      }
+
+      // Sort in memory (avoids Firestore index requirement and mixed-type issues)
+      plans.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      debugPrint('✅ Returning ${plans.length} plans');
+      return plans;
+    } catch (e) {
+      debugPrint('❌ fetchSavedPlans error: $e');
+      rethrow;
+    }
   }
 
   Future<void> deletePlan(String planId) async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return;
 
-    await _firestore
-        .collection(AppConstants.usersCollection)
-        .doc(uid)
-        .collection(AppConstants.workoutPlansCollection)
-        .doc(planId)
-        .delete();
+    try {
+      debugPrint('🗑️ Deleting plan $planId');
+      await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(uid)
+          .collection(AppConstants.workout_plansCollection)
+          .doc(planId)
+          .delete();
+      debugPrint('✅ Plan deleted');
+    } catch (e) {
+      debugPrint('❌ deletePlan error: $e');
+      rethrow;
+    }
   }
 }

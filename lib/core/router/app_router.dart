@@ -12,6 +12,7 @@ import '../../features/pose_detection/presentation/exercise_select_screen.dart';
 import '../../features/pose_detection/presentation/pose_session_screen.dart';
 import '../../features/pose_detection/presentation/session_summary_screen.dart';
 import '../../features/workout_plans/presentation/workout_plans_screen.dart';
+import '../../features/chat/presentation/chat_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../widgets/main_shell_screen.dart';
@@ -84,6 +85,10 @@ class AppRouter {
             GoRoute(
               path: '/history',
               builder: (context, state) => const HistoryScreen(),
+            ),
+            GoRoute(
+              path: '/chat',
+              builder: (context, state) => const ChatScreen(),
             ),
           ],
         ),

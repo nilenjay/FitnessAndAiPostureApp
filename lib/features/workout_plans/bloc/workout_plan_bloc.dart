@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../data/workout_plan_model.dart';
 import '../data/workout_plan_repository.dart';
@@ -31,9 +32,28 @@ class WorkoutPlanBloc extends Bloc<WorkoutPlanEvent, WorkoutPlanState> {
         equipment: event.equipment,
       );
       emit(WorkoutPlanGenerated(plan));
-      // Refresh list after generating
-      add(WorkoutPlanFetch());
+
+      // Try to fetch all saved plans; if Firestore read fails, use just the new plan
+      try {
+        final plans = await _repository.fetchSavedPlans();
+        
+        // Ensure the newly generated plan is explicitly in the results
+        final localPlans = List<WorkoutPlan>.from(plans);
+        if (!localPlans.any((p) => p.id == plan.id)) {
+          localPlans.insert(0, plan);
+        }
+
+        emit(WorkoutPlanLoaded(
+          plans: localPlans,
+          selectedPlan: localPlans.isNotEmpty ? localPlans.first : plan,
+        ));
+      } catch (fetchError) {
+        debugPrint('⚠️ Firestore fetch failed after generate: $fetchError');
+        // Still show the generated plan even if fetch fails
+        emit(WorkoutPlanLoaded(plans: [plan], selectedPlan: plan));
+      }
     } catch (e) {
+      debugPrint('❌ Plan generation failed: $e');
       emit(WorkoutPlanError('Failed to generate plan: ${e.toString()}'));
     }
   }
@@ -50,6 +70,7 @@ class WorkoutPlanBloc extends Bloc<WorkoutPlanEvent, WorkoutPlanState> {
         selectedPlan: plans.isNotEmpty ? plans.first : null,
       ));
     } catch (e) {
+      debugPrint('❌ Fetch plans failed: $e');
       emit(WorkoutPlanError('Failed to load plans: ${e.toString()}'));
     }
   }
@@ -60,8 +81,14 @@ class WorkoutPlanBloc extends Bloc<WorkoutPlanEvent, WorkoutPlanState> {
       ) async {
     try {
       await _repository.deletePlan(event.planId);
-      add(WorkoutPlanFetch());
+      // Fetch directly instead of add(WorkoutPlanFetch()) to avoid emit issues
+      final plans = await _repository.fetchSavedPlans();
+      emit(WorkoutPlanLoaded(
+        plans: plans,
+        selectedPlan: plans.isNotEmpty ? plans.first : null,
+      ));
     } catch (e) {
+      debugPrint('❌ Delete failed: $e');
       emit(WorkoutPlanError('Failed to delete plan.'));
     }
   }

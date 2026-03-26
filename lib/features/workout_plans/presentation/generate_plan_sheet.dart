@@ -86,7 +86,7 @@ class _GeneratePlanSheetState extends State<GeneratePlanSheet> {
             ),
             const SizedBox(height: 4),
             const Text(
-              'Gemini will create a personalized weekly plan for you',
+              'AI will create a personalized weekly plan for you',
               style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 24),

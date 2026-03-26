@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class WorkoutPlan {
   final String id;
   final String goal;
@@ -18,6 +20,16 @@ class WorkoutPlan {
   });
 
   factory WorkoutPlan.fromJson(Map<String, dynamic> json) {
+    DateTime parsedDate;
+    final raw = json['createdAt'];
+    if (raw is Timestamp) {
+      parsedDate = raw.toDate();
+    } else if (raw is String) {
+      parsedDate = DateTime.tryParse(raw) ?? DateTime.now();
+    } else {
+      parsedDate = DateTime.now();
+    }
+
     return WorkoutPlan(
       id: json['id'] ?? '',
       goal: json['goal'] ?? '',
@@ -27,9 +39,7 @@ class WorkoutPlan {
       days: (json['days'] as List<dynamic>? ?? [])
           .map((d) => WorkoutDay.fromJson(d as Map<String, dynamic>))
           .toList(),
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
+      createdAt: parsedDate,
     );
   }
 
@@ -40,7 +50,7 @@ class WorkoutPlan {
     'daysPerWeek': daysPerWeek,
     'equipment': equipment,
     'days': days.map((d) => d.toJson()).toList(),
-    'createdAt': createdAt.toIso8601String(),
+    'createdAt': Timestamp.fromDate(createdAt),
   };
 }
 
