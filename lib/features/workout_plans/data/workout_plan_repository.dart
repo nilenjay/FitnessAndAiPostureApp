@@ -173,13 +173,11 @@ Rules:
     }
 
     try {
-      debugPrint('📥 Fetching plans for user $uid');
       // Use a timeout and fallback to cache to prevent pending writes from deadlocking the server fetch
       final query = _firestore
           .collection(AppConstants.usersCollection)
           .doc(uid)
           .collection(AppConstants.workout_plansCollection)
-          .orderBy('createdAt', descending: true)
           .limit(10);
 
       final snapshot = await query
