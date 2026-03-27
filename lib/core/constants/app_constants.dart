@@ -4,12 +4,11 @@ class AppConstants {
   // Groq
   static const String groqModel = 'llama-3.3-70b-versatile';
   static const String groqBaseUrl = 'https://api.groq.com/openai/v1/chat/completions';
-
   static String get groqApiKey => dotenv.env['GROQ_API_KEY'] ?? '';
 
   // Firestore Collections
   static const String usersCollection = 'users';
-  static const String workout_plansCollection = 'workout_plans';
+  static const String workoutPlansCollection = 'workout_plans'; // ✅ fixed: camelCase
   static const String sessionsCollection = 'sessions';
 
   // Exercises supported by pose detection
@@ -22,6 +21,6 @@ class AppConstants {
 
   // Pose detection thresholds
   static const double poseConfidenceThreshold = 0.5;
-  static const double squatDepthAngle = 90.0;   // degrees at knee
-  static const double pushupBottomAngle = 90.0; // degrees at elbow
+  static const double squatDepthAngle = 90.0;
+  static const double pushupBottomAngle = 90.0;
 }

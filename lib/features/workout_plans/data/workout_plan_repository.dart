@@ -42,13 +42,9 @@ class WorkoutPlanRepository {
         'messages': [
           {
             'role': 'system',
-            'content':
-                'You are an expert fitness coach. Return ONLY valid JSON with no markdown fences or extra text.',
+            'content': 'You are an expert fitness coach. Return ONLY valid JSON with no markdown fences or extra text.',
           },
-          {
-            'role': 'user',
-            'content': prompt,
-          },
+          {'role': 'user', 'content': prompt},
         ],
         'temperature': 0.7,
         'max_tokens': 4096,
@@ -57,10 +53,8 @@ class WorkoutPlanRepository {
     );
 
     final data = response.data as Map<String, dynamic>;
-    final text =
-        data['choices'][0]['message']['content'] as String? ?? '';
+    final text = data['choices'][0]['message']['content'] as String? ?? '';
 
-    // Strip markdown fences if the model wraps in ```json
     final cleaned = text
         .replaceAll(RegExp(r'```json\s*'), '')
         .replaceAll(RegExp(r'```\s*'), '')
@@ -80,7 +74,6 @@ class WorkoutPlanRepository {
       createdAt: DateTime.now(),
     );
 
-    // Save to Firestore
     await _savePlan(plan);
     return plan;
   }
@@ -141,7 +134,7 @@ Rules:
 ''';
   }
 
-  // ─── Firestore ────────────────────────────────────────────────────────────
+  // ─── Firestore ─────────────────────────────────────────────────────────────
 
   Future<void> _savePlan(WorkoutPlan plan) async {
     final uid = _auth.currentUser?.uid;
@@ -149,16 +142,14 @@ Rules:
       debugPrint('⚠️ _savePlan: No user logged in');
       return;
     }
-
     try {
-      debugPrint('💾 Saving plan ${plan.id} for user $uid');
       await _firestore
           .collection(AppConstants.usersCollection)
           .doc(uid)
-          .collection(AppConstants.workout_plansCollection)
+          .collection(AppConstants.workoutPlansCollection) // ✅ fixed
           .doc(plan.id)
           .set(plan.toJson());
-      debugPrint('✅ Plan saved successfully');
+      debugPrint('✅ Plan saved: ${plan.id}');
     } catch (e) {
       debugPrint('❌ _savePlan error: $e');
       rethrow;
@@ -167,40 +158,42 @@ Rules:
 
   Future<List<WorkoutPlan>> fetchSavedPlans() async {
     final uid = _auth.currentUser?.uid;
-    if (uid == null) {
-      debugPrint('⚠️ fetchSavedPlans: No user logged in');
-      return [];
-    }
+    if (uid == null) return [];
 
     try {
-      // Use a timeout and fallback to cache to prevent pending writes from deadlocking the server fetch
-      final query = _firestore
+      // ✅ NO orderBy — avoids index requirement and deadlock
+      // We sort in memory instead
+      final snapshot = await _firestore
           .collection(AppConstants.usersCollection)
           .doc(uid)
-          .collection(AppConstants.workout_plansCollection)
-          .limit(10);
-
-      final snapshot = await query
+          .collection(AppConstants.workoutPlansCollection)
+          .limit(10)
           .get(const GetOptions(source: Source.serverAndCache))
-          .timeout(const Duration(seconds: 4), onTimeout: () async {
-        debugPrint('⚠️ Fetch timeout, falling back to cache...');
-        return await query.get(const GetOptions(source: Source.cache));
-      });
-
-      debugPrint('📥 Got ${snapshot.docs.length} plan docs');
+          .timeout(
+        const Duration(seconds: 6),
+        onTimeout: () async {
+          debugPrint('⚠️ Server timeout, falling back to cache');
+          return await _firestore
+              .collection(AppConstants.usersCollection)
+              .doc(uid)
+              .collection(AppConstants.workoutPlansCollection)
+              .limit(10)
+              .get(const GetOptions(source: Source.cache));
+        },
+      );
 
       final plans = <WorkoutPlan>[];
       for (final doc in snapshot.docs) {
         try {
           plans.add(WorkoutPlan.fromJson(doc.data()));
-        } catch (parseError) {
-          debugPrint('⚠️ Failed to parse plan ${doc.id}: $parseError');
+        } catch (e) {
+          debugPrint('⚠️ Parse error for doc ${doc.id}: $e');
         }
       }
 
-      // Sort in memory (avoids Firestore index requirement and mixed-type issues)
+      // ✅ Sort in memory — no index needed
       plans.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      debugPrint('✅ Returning ${plans.length} plans');
+      debugPrint('✅ Fetched ${plans.length} plans');
       return plans;
     } catch (e) {
       debugPrint('❌ fetchSavedPlans error: $e');
@@ -211,16 +204,14 @@ Rules:
   Future<void> deletePlan(String planId) async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return;
-
     try {
-      debugPrint('🗑️ Deleting plan $planId');
       await _firestore
           .collection(AppConstants.usersCollection)
           .doc(uid)
-          .collection(AppConstants.workout_plansCollection)
+          .collection(AppConstants.workoutPlansCollection)
           .doc(planId)
           .delete();
-      debugPrint('✅ Plan deleted');
+      debugPrint('✅ Plan deleted: $planId');
     } catch (e) {
       debugPrint('❌ deletePlan error: $e');
       rethrow;
