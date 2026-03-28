@@ -41,6 +41,7 @@ dependencies:
   dio: ^5.4.0
   uuid:
   intl:
+  flutter_tts: ^4.0.2
 
 
   # The following adds the Cupertino Icons font to your application.

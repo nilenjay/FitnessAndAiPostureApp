@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import '../../../core/constants/app_constants.dart';
 import '../data/pose_repository.dart';
@@ -17,6 +18,11 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
     ),
   );
 
+  // ── TTS ──────────────────────────────────────────────────────────────────
+  final FlutterTts _tts = FlutterTts();
+  String _lastSpoken = '';
+  DateTime _lastSpeakTime = DateTime(2000);
+
   int _repCount = 0;
   RepPhase _currentPhase = RepPhase.up;
   String _exercise = 'squat';
@@ -30,17 +36,70 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
     on<PoseCameraStopped>(_onCameraStopped);
     on<PoseImageProcessed>(_onImageProcessed);
     on<PoseSessionCompleted>(_onSessionCompleted);
+
+    _initTts();
   }
+
+  // ── TTS setup ─────────────────────────────────────────────────────────────
+
+  Future<void> _initTts() async {
+    await _tts.setLanguage('en-US');
+    await _tts.setSpeechRate(0.52);   // slightly slower for gym clarity
+    await _tts.setVolume(1.0);
+    await _tts.setPitch(1.0);
+  }
+
+  /// Speaks [text] only if it differs from the last utterance and a minimum
+  /// cooldown has elapsed. This prevents the TTS queue from flooding during
+  /// continuous camera frames.
+  Future<void> _speak(String text, {Duration cooldown = const Duration(seconds: 3)}) async {
+    final now = DateTime.now();
+    if (text == _lastSpoken && now.difference(_lastSpeakTime) < cooldown) {
+      return;
+    }
+    _lastSpoken = text;
+    _lastSpeakTime = now;
+    await _tts.stop();
+    await _tts.speak(text);
+  }
+
+  /// Always speaks rep announcements regardless of cooldown.
+  Future<void> _speakRepCount(int reps, String exercise) async {
+    final exerciseName = _prettyExercise(exercise);
+    final text = reps == 1
+        ? 'Rep 1! Keep it up!'
+        : 'Rep $reps! Great $exerciseName!';
+    _lastSpoken = text;
+    _lastSpeakTime = DateTime.now();
+    await _tts.stop();
+    await _tts.speak(text);
+  }
+
+  String _prettyExercise(String exercise) {
+    switch (exercise) {
+      case 'squat': return 'squat';
+      case 'pushup': return 'push-up';
+      case 'lunge': return 'lunge';
+      case 'plank': return 'plank hold';
+      default: return exercise;
+    }
+  }
+
+  // ── BLoC handlers ─────────────────────────────────────────────────────────
 
   void _onCameraStarted(PoseCameraStarted event, Emitter<PoseState> emit) {
     _exercise = event.exercise;
     _repCount = 0;
     _currentPhase = RepPhase.up;
     _feedbackLog.clear();
+    _lastSpoken = '';
+    _speak('Starting ${_prettyExercise(_exercise)}. Get into position.',
+        cooldown: Duration.zero);
     emit(PoseCameraReady());
   }
 
   void _onCameraStopped(PoseCameraStopped event, Emitter<PoseState> emit) {
+    _tts.stop();
     emit(PoseInitial());
   }
 
@@ -61,11 +120,20 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
 
       final pose = poses.first;
       final result = _analyzeExercise(pose);
+      final feedback = result['feedback'] as String;
+      final isRepAnnouncement = result['isRepAnnouncement'] as bool? ?? false;
+
+      // Voice feedback
+      if (isRepAnnouncement) {
+        await _speakRepCount(_repCount, _exercise);
+      } else if (feedback.isNotEmpty) {
+        await _speak(feedback);
+      }
 
       emit(PoseDetecting(
         poses: poses,
         repCount: _repCount,
-        feedback: result['feedback'] as String,
+        feedback: feedback,
         angle: result['angle'] as double,
         repPhase: _currentPhase,
       ));
@@ -76,10 +144,15 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
     }
   }
 
-  Future<void> _onSessionCompleted(PoseSessionCompleted event, Emitter<PoseState> emit) async {
+  Future<void> _onSessionCompleted(
+      PoseSessionCompleted event, Emitter<PoseState> emit) async {
     final score = _calculateScore();
-    
-    // Save to Firestore
+
+    // Speak summary
+    await _tts.stop();
+    await _tts.speak(
+        'Great session! You completed $_repCount ${_prettyExercise(_exercise)}s with a score of $score out of 100.');
+
     try {
       await _poseRepository.saveSession(
         exercise: _exercise,
@@ -88,8 +161,7 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
         feedback: List.from(_feedbackLog),
       );
     } catch (e) {
-      // Log error but still show summary
-      print('Error saving session: $e');
+      // ignore save errors, still show summary
     }
 
     emit(PoseSessionDone(
@@ -100,6 +172,7 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
     ));
   }
 
+  // ── Exercise analysis ─────────────────────────────────────────────────────
 
   Map<String, dynamic> _analyzeExercise(Pose pose) {
     switch (_exercise) {
@@ -112,7 +185,7 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
       case 'plank':
         return _analyzePlank(pose);
       default:
-        return {'feedback': 'Unknown exercise', 'angle': 0.0};
+        return {'feedback': 'Unknown exercise', 'angle': 0.0, 'isRepAnnouncement': false};
     }
   }
 
@@ -123,23 +196,27 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
     final shoulder = pose.landmarks[PoseLandmarkType.leftShoulder];
 
     if (!_areLandmarksVisible([hip, knee, ankle, shoulder])) {
-      return {'feedback': 'Move into frame fully', 'angle': 0.0};
+      return {
+        'feedback': 'Move into frame fully',
+        'angle': 0.0,
+        'isRepAnnouncement': false,
+      };
     }
 
     final kneeAngle = _calculateAngle(hip!, knee!, ankle!);
+    bool isRepAnnouncement = false;
     String feedback = '';
 
-    // Rep counting: down = knee < 110°, up = knee > 160°
     if (kneeAngle < 110 && _currentPhase == RepPhase.up) {
       _currentPhase = RepPhase.down;
     } else if (kneeAngle > 160 && _currentPhase == RepPhase.down) {
       _currentPhase = RepPhase.up;
       _repCount++;
+      isRepAnnouncement = true;
       feedback = 'Rep $_repCount — Good squat!';
       _addFeedback(feedback);
     }
 
-    // Form feedback
     if (feedback.isEmpty) {
       if (kneeAngle > 160) {
         feedback = 'Lower your squat — go deeper';
@@ -149,7 +226,6 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
         feedback = 'Good form — keep going';
       }
 
-      // Check back angle
       final backAngle = _calculateAngle(shoulder!, hip!, knee!);
       if (backAngle < 150) {
         feedback = 'Keep your back straight!';
@@ -157,7 +233,11 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
       }
     }
 
-    return {'feedback': feedback, 'angle': kneeAngle};
+    return {
+      'feedback': feedback,
+      'angle': kneeAngle,
+      'isRepAnnouncement': isRepAnnouncement,
+    };
   }
 
   Map<String, dynamic> _analyzePushup(Pose pose) {
@@ -167,19 +247,24 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
     final hip = pose.landmarks[PoseLandmarkType.leftHip];
 
     if (!_areLandmarksVisible([shoulder, elbow, wrist, hip])) {
-      return {'feedback': 'Move into frame fully', 'angle': 0.0};
+      return {
+        'feedback': 'Move into frame fully',
+        'angle': 0.0,
+        'isRepAnnouncement': false,
+      };
     }
 
     final elbowAngle = _calculateAngle(shoulder!, elbow!, wrist!);
+    bool isRepAnnouncement = false;
     String feedback = '';
 
-    // Rep counting: down = elbow < 90°, up = elbow > 155°
     if (elbowAngle < 90 && _currentPhase == RepPhase.up) {
       _currentPhase = RepPhase.down;
     } else if (elbowAngle > 155 && _currentPhase == RepPhase.down) {
       _currentPhase = RepPhase.up;
       _repCount++;
-      feedback = 'Rep $_repCount — Great pushup!';
+      isRepAnnouncement = true;
+      feedback = 'Rep $_repCount — Great push-up!';
       _addFeedback(feedback);
     }
 
@@ -192,7 +277,6 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
         feedback = 'Good form — keep going';
       }
 
-      // Check body alignment
       final bodyAngle = _calculateAngle(shoulder, hip!, wrist);
       if (bodyAngle < 160) {
         feedback = 'Keep your body straight — no sagging!';
@@ -200,7 +284,11 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
       }
     }
 
-    return {'feedback': feedback, 'angle': elbowAngle};
+    return {
+      'feedback': feedback,
+      'angle': elbowAngle,
+      'isRepAnnouncement': isRepAnnouncement,
+    };
   }
 
   Map<String, dynamic> _analyzeLunge(Pose pose) {
@@ -209,10 +297,15 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
     final ankle = pose.landmarks[PoseLandmarkType.leftAnkle];
 
     if (!_areLandmarksVisible([hip, knee, ankle])) {
-      return {'feedback': 'Move into frame fully', 'angle': 0.0};
+      return {
+        'feedback': 'Move into frame fully',
+        'angle': 0.0,
+        'isRepAnnouncement': false,
+      };
     }
 
     final kneeAngle = _calculateAngle(hip!, knee!, ankle!);
+    bool isRepAnnouncement = false;
     String feedback = '';
 
     if (kneeAngle < 95 && _currentPhase == RepPhase.up) {
@@ -220,6 +313,7 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
     } else if (kneeAngle > 160 && _currentPhase == RepPhase.down) {
       _currentPhase = RepPhase.up;
       _repCount++;
+      isRepAnnouncement = true;
       feedback = 'Rep $_repCount — Great lunge!';
       _addFeedback(feedback);
     }
@@ -230,7 +324,11 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
           : 'Good lunge depth!';
     }
 
-    return {'feedback': feedback, 'angle': kneeAngle};
+    return {
+      'feedback': feedback,
+      'angle': kneeAngle,
+      'isRepAnnouncement': isRepAnnouncement,
+    };
   }
 
   Map<String, dynamic> _analyzePlank(Pose pose) {
@@ -239,7 +337,11 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
     final ankle = pose.landmarks[PoseLandmarkType.leftAnkle];
 
     if (!_areLandmarksVisible([shoulder, hip, ankle])) {
-      return {'feedback': 'Move into frame fully', 'angle': 0.0};
+      return {
+        'feedback': 'Move into frame fully',
+        'angle': 0.0,
+        'isRepAnnouncement': false,
+      };
     }
 
     final bodyAngle = _calculateAngle(shoulder!, hip!, ankle!);
@@ -255,14 +357,16 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
       _addFeedback('Hips too high during plank');
     }
 
-    return {'feedback': feedback, 'angle': bodyAngle};
+    return {
+      'feedback': feedback,
+      'angle': bodyAngle,
+      'isRepAnnouncement': false,
+    };
   }
 
-  double _calculateAngle(
-      PoseLandmark a,
-      PoseLandmark b,
-      PoseLandmark c,
-      ) {
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  double _calculateAngle(PoseLandmark a, PoseLandmark b, PoseLandmark c) {
     final radians = math.atan2(c.y - b.y, c.x - b.x) -
         math.atan2(a.y - b.y, a.x - b.x);
     double angle = radians * (180 / math.pi);
@@ -272,9 +376,8 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
   }
 
   bool _areLandmarksVisible(List<PoseLandmark?> landmarks) {
-    return landmarks.every((l) =>
-    l != null &&
-        l.likelihood >= AppConstants.poseConfidenceThreshold);
+    return landmarks.every(
+            (l) => l != null && l.likelihood >= AppConstants.poseConfidenceThreshold);
   }
 
   void _addFeedback(String feedback) {
@@ -285,7 +388,6 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
 
   int _calculateScore() {
     if (_repCount == 0) return 0;
-    // Deduct points for each form error logged
     final deduction = (_feedbackLog
         .where((f) =>
     f.contains('leaning') ||
@@ -300,6 +402,7 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
   @override
   Future<void> close() {
     _poseDetector.close();
+    _tts.stop();
     return super.close();
   }
 }

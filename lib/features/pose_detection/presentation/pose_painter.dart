@@ -34,23 +34,13 @@ class PosePainter extends CustomPainter {
       ..strokeWidth = 3;
 
     for (final pose in poses) {
-      // Draw bones (connections)
       _drawBones(canvas, pose, size, bonePaint, errorPaint);
 
-      // Draw joints (landmarks)
       pose.landmarks.forEach((_, landmark) {
         if (landmark.likelihood >= 0.5) {
-          final offset = _translateOffset(
-            Offset(landmark.x, landmark.y),
-            size,
-          );
+          final offset = _translateOffset(Offset(landmark.x, landmark.y), size);
           canvas.drawCircle(offset, 6, jointPaint);
-          // Inner dot
-          canvas.drawCircle(
-            offset,
-            3,
-            Paint()..color = Colors.white,
-          );
+          canvas.drawCircle(offset, 3, Paint()..color = Colors.white);
         }
       });
     }
@@ -63,7 +53,6 @@ class PosePainter extends CustomPainter {
       Paint bonePaint,
       Paint errorPaint,
       ) {
-    // Define skeleton connections
     final connections = [
       // Torso
       [PoseLandmarkType.leftShoulder, PoseLandmarkType.rightShoulder],
@@ -97,7 +86,8 @@ class PosePainter extends CustomPainter {
           end != null &&
           start.likelihood >= 0.5 &&
           end.likelihood >= 0.5) {
-        final startOffset = _translateOffset(Offset(start.x, start.y), size);
+        final startOffset =
+        _translateOffset(Offset(start.x, start.y), size);
         final endOffset = _translateOffset(Offset(end.x, end.y), size);
         canvas.drawLine(startOffset, endOffset, bonePaint);
       }
@@ -111,7 +101,9 @@ class PosePainter extends CustomPainter {
     double x = point.dx * scaleX;
     double y = point.dy * scaleY;
 
-    // Mirror for back camera
+    // Back camera: ML Kit coordinates are mirrored → un-mirror them.
+    // Front camera: ML Kit already returns natural (mirror) coordinates
+    //               matching what the user sees on screen → no transform needed.
     if (cameraLensDirection == CameraLensDirection.back) {
       x = size.width - x;
     }
@@ -121,6 +113,7 @@ class PosePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(PosePainter oldDelegate) {
-    return oldDelegate.poses != poses;
+    return oldDelegate.poses != poses ||
+        oldDelegate.cameraLensDirection != cameraLensDirection;
   }
 }
