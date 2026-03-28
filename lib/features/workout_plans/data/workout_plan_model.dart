@@ -1,5 +1,83 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// ─── Diet Plan ──────────────────────────────────────────────────────────────
+
+class DietPlan {
+  final int calories;
+  final int proteinG;
+  final int carbsG;
+  final int fatG;
+  final String goal;
+  final List<MealSuggestion> meals;
+  final List<String> tips;
+
+  DietPlan({
+    required this.calories,
+    required this.proteinG,
+    required this.carbsG,
+    required this.fatG,
+    required this.goal,
+    required this.meals,
+    required this.tips,
+  });
+
+  factory DietPlan.fromJson(Map<String, dynamic> json) {
+    return DietPlan(
+      calories: (json['calories'] as num?)?.toInt() ?? 2000,
+      proteinG: (json['proteinG'] as num?)?.toInt() ?? 150,
+      carbsG: (json['carbsG'] as num?)?.toInt() ?? 200,
+      fatG: (json['fatG'] as num?)?.toInt() ?? 60,
+      goal: json['goal'] as String? ?? '',
+      meals: (json['meals'] as List<dynamic>? ?? [])
+          .map((m) => MealSuggestion.fromJson(m as Map<String, dynamic>))
+          .toList(),
+      tips: (json['tips'] as List<dynamic>? ?? []).cast<String>(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'calories': calories,
+    'proteinG': proteinG,
+    'carbsG': carbsG,
+    'fatG': fatG,
+    'goal': goal,
+    'meals': meals.map((m) => m.toJson()).toList(),
+    'tips': tips,
+  };
+}
+
+class MealSuggestion {
+  final String name;       // e.g. "Breakfast"
+  final String example;   // e.g. "Oatmeal with banana and 3 eggs"
+  final int calories;
+  final int proteinG;
+
+  MealSuggestion({
+    required this.name,
+    required this.example,
+    required this.calories,
+    required this.proteinG,
+  });
+
+  factory MealSuggestion.fromJson(Map<String, dynamic> json) {
+    return MealSuggestion(
+      name: json['name'] as String? ?? '',
+      example: json['example'] as String? ?? '',
+      calories: (json['calories'] as num?)?.toInt() ?? 0,
+      proteinG: (json['proteinG'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'example': example,
+    'calories': calories,
+    'proteinG': proteinG,
+  };
+}
+
+// ─── Workout Plan ───────────────────────────────────────────────────────────
+
 class WorkoutPlan {
   final String id;
   final String goal;
@@ -8,6 +86,7 @@ class WorkoutPlan {
   final String equipment;
   final List<WorkoutDay> days;
   final DateTime createdAt;
+  final DietPlan? dietPlan; // ← new
 
   WorkoutPlan({
     required this.id,
@@ -17,6 +96,7 @@ class WorkoutPlan {
     required this.equipment,
     required this.days,
     required this.createdAt,
+    this.dietPlan,
   });
 
   factory WorkoutPlan.fromJson(Map<String, dynamic> json) {
@@ -40,6 +120,9 @@ class WorkoutPlan {
           .map((d) => WorkoutDay.fromJson(d as Map<String, dynamic>))
           .toList(),
       createdAt: parsedDate,
+      dietPlan: json['dietPlan'] != null
+          ? DietPlan.fromJson(json['dietPlan'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -51,6 +134,7 @@ class WorkoutPlan {
     'equipment': equipment,
     'days': days.map((d) => d.toJson()).toList(),
     'createdAt': Timestamp.fromDate(createdAt),
+    if (dietPlan != null) 'dietPlan': dietPlan!.toJson(),
   };
 }
 

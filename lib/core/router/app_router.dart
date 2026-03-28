@@ -22,7 +22,6 @@ class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
   static final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
-  // Call this once in main.dart after BLoC is ready
   static GoRouter createRouter(AuthBloc authBloc) {
     return GoRouter(
       navigatorKey: _rootNavigatorKey,
