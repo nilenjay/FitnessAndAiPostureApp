@@ -17,12 +17,27 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Load today's water intake when home screen opens
     context.read<WaterIntakeCubit>().loadToday();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Reload water intake when app resumes (handles midnight reset)
+    if (state == AppLifecycleState.resumed) {
+      context.read<WaterIntakeCubit>().loadToday();
+    }
   }
 
   @override

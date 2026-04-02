@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/services/notification_service.dart';
 import '../../auth/bloc/auth_bloc.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
@@ -26,6 +27,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   String _selectedGender = 'Male';
   String _selectedActivityLevel = 'Lightly Active';
+  bool _waterRemindersEnabled = true;
+  int _reminderIntervalHours = 2;
   bool _isLoading = false;
 
   final List<String> _genders = ['Male', 'Female', 'Other'];
@@ -71,6 +74,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             _ageController.text = data['age']?.toString() ?? '';
             _waterGoalController.text =
                 (data['waterGoal'] ?? 8).toString();
+            _waterRemindersEnabled = data['waterReminders'] ?? true;
+            _reminderIntervalHours = data['reminderInterval'] ?? 2;
 
             if (data['gender'] != null && _genders.contains(data['gender'])) {
               _selectedGender = data['gender'];
@@ -106,12 +111,16 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           'gender': _selectedGender,
           'activityLevel': _selectedActivityLevel,
           'waterGoal': int.tryParse(_waterGoalController.text) ?? 8,
+          'waterReminders': _waterRemindersEnabled,
+          'reminderInterval': _reminderIntervalHours,
           'profileComplete': true,
         }, SetOptions(merge: true));
 
+        // Handle water reminder notifications
+        await _updateWaterReminders();
+
         if (mounted) {
           if (widget.isOnboarding) {
-            // Tell AuthBloc profile is done, then route to home
             context.read<AuthBloc>().add(AuthProfileCompleted());
             context.go('/home');
           } else {
@@ -132,6 +141,21 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _updateWaterReminders() async {
+    final notifService = NotificationService.instance;
+
+    if (_waterRemindersEnabled) {
+      // Request permission first
+      await notifService.requestPermission();
+      // Schedule reminders
+      await notifService.scheduleWaterReminders(
+        intervalHours: _reminderIntervalHours,
+      );
+    } else {
+      await notifService.cancelWaterReminders();
     }
   }
 
@@ -276,78 +300,216 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   setState(() => _selectedActivityLevel = value!);
                 },
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
-              // ── Water Goal ─────────────────────────────────────────────────
-              const Text('Daily Water Goal (glasses)',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary)),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  // Decrease button
-                  _GoalAdjustButton(
-                    icon: Icons.remove,
-                    onTap: () {
-                      final current =
-                          int.tryParse(_waterGoalController.text) ?? 8;
-                      if (current > 1) {
-                        setState(() =>
-                            _waterGoalController.text = '${current - 1}');
-                      }
-                    },
+              // ── Hydration Section ──────────────────────────────────────────
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0091EA).withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF00B8D4).withOpacity(0.25),
                   ),
-                  const SizedBox(width: 12),
-                  // Goal input
-                  Expanded(
-                    child: TextFormField(
-                      controller: _waterGoalController,
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color(0xFF00E5FF),
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                      ),
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.water_drop,
-                            color: Color(0xFF00B8D4)),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
-                      ),
-                      validator: (value) {
-                        final v = int.tryParse(value ?? '');
-                        if (v == null || v < 1 || v > 20) {
-                          return 'Enter 1–20';
-                        }
-                        return null;
-                      },
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.water_drop, color: Color(0xFF00E5FF), size: 22),
+                        SizedBox(width: 8),
+                        Text(
+                          'Hydration Settings',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Increase button
-                  _GoalAdjustButton(
-                    icon: Icons.add,
-                    onTap: () {
-                      final current =
-                          int.tryParse(_waterGoalController.text) ?? 8;
-                      if (current < 20) {
-                        setState(() =>
-                            _waterGoalController.text = '${current + 1}');
-                      }
-                    },
-                  ),
-                ],
+                    const SizedBox(height: 20),
+
+                    // Water Goal
+                    const Text('Daily Water Goal (glasses)',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary,
+                            fontSize: 13)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _GoalAdjustButton(
+                          icon: Icons.remove,
+                          onTap: () {
+                            final current =
+                                int.tryParse(_waterGoalController.text) ?? 8;
+                            if (current > 1) {
+                              setState(() =>
+                                  _waterGoalController.text = '${current - 1}');
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _waterGoalController,
+                            keyboardType: TextInputType.number,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Color(0xFF00E5FF),
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                            ),
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(Icons.water_drop,
+                                  color: Color(0xFF00B8D4)),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 14),
+                            ),
+                            validator: (value) {
+                              final v = int.tryParse(value ?? '');
+                              if (v == null || v < 1 || v > 20) {
+                                return 'Enter 1–20';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        _GoalAdjustButton(
+                          icon: Icons.add,
+                          onTap: () {
+                            final current =
+                                int.tryParse(_waterGoalController.text) ?? 8;
+                            if (current < 20) {
+                              setState(() =>
+                                  _waterGoalController.text = '${current + 1}');
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Recommended: 8 glasses (≈ 2 litres)',
+                      style: TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // ── Water Reminder Toggle ────────────────────────────────
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.divider),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.notifications_active,
+                              color: Color(0xFF00E5FF), size: 22),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Water Reminders',
+                                  style: TextStyle(
+                                    color: AppTheme.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                  'Get notified to drink water',
+                                  style: TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _waterRemindersEnabled,
+                            onChanged: (v) =>
+                                setState(() => _waterRemindersEnabled = v),
+                            activeColor: const Color(0xFF00E5FF),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // ── Reminder Interval ────────────────────────────────────
+                    if (_waterRemindersEnabled) ...[
+                      const SizedBox(height: 16),
+                      const Text('Remind me every',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textPrimary,
+                              fontSize: 13)),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [1, 2, 3, 4].map((hours) {
+                          final isSelected = _reminderIntervalHours == hours;
+                          return Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(
+                                  () => _reminderIntervalHours = hours),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                margin: const EdgeInsets.only(right: 8),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? const Color(0xFF00E5FF)
+                                          .withOpacity(0.2)
+                                      : AppTheme.surface,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? const Color(0xFF00E5FF)
+                                        : AppTheme.divider,
+                                    width: isSelected ? 1.5 : 1,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${hours}h',
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? const Color(0xFF00E5FF)
+                                          : AppTheme.textSecondary,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Reminders from 8 AM to 10 PM, every $_reminderIntervalHours hour${_reminderIntervalHours > 1 ? 's' : ''}',
+                        style: const TextStyle(
+                            fontSize: 11, color: AppTheme.textSecondary),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 6),
-              const Text(
-                'Recommended: 8 glasses (≈ 2 litres)',
-                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-              ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 32),
 
               // Save Button
               SizedBox(
@@ -384,7 +546,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 Center(
                   child: TextButton(
                     onPressed: () {
-                      // Allow skipping, but still mark profile as complete
                       FirebaseFirestore.instance
                           .collection(AppConstants.usersCollection)
                           .doc(FirebaseAuth.instance.currentUser?.uid)
