@@ -50,6 +50,11 @@ class ProfileScreen extends StatelessWidget {
         title: const Text('Profile'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.edit, color: AppTheme.primary),
+            tooltip: 'Edit Profile',
+            onPressed: () => context.push('/profile/edit'),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout, color: AppTheme.error),
             tooltip: 'Sign Out',
             onPressed: () => _showLogoutDialog(context), // ✅ shows dialog
@@ -83,6 +88,11 @@ class ProfileScreen extends StatelessWidget {
           final totalReps = userData['totalReps'] ?? 0;
           final totalSessions = userData['totalSessions'] ?? 0;
           final streak = userData['streak'] ?? 0;
+          
+          final weight = userData['weight'];
+          final height = userData['height'];
+          final age = userData['age'];
+
           final initial = (user.displayName ?? 'A').substring(0, 1).toUpperCase();
 
           return SingleChildScrollView(
@@ -116,6 +126,27 @@ class ProfileScreen extends StatelessWidget {
                 Text(user.email ?? '',
                     style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
                 const SizedBox(height: 28),
+
+                // Physical Details Box
+                if (weight != null || height != null || age != null) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppTheme.divider),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildDetailItem('Weight', weight != null ? '${weight}kg' : '--'),
+                        _buildDetailItem('Height', height != null ? '${height}cm' : '--'),
+                        _buildDetailItem('Age', age != null ? '$age' : '--'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                ],
 
                 // Stats Grid
                 GridView.count(
@@ -248,4 +279,27 @@ class _StatCard extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget _buildDetailItem(String label, String value) {
+  return Column(
+    children: [
+      Text(
+        value,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          color: AppTheme.primary,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          color: AppTheme.textSecondary,
+        ),
+      ),
+    ],
+  );
 }

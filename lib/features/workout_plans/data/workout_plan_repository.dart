@@ -28,11 +28,29 @@ class WorkoutPlanRepository {
     required int daysPerWeek,
     required String equipment,
   }) async {
+    // Fetch user details first
+    Map<String, dynamic> userDetails = {};
+    final uid = _auth.currentUser?.uid;
+    if (uid != null) {
+      try {
+        final doc = await _firestore
+            .collection(AppConstants.usersCollection)
+            .doc(uid)
+            .get();
+        if (doc.exists) {
+          userDetails = doc.data() ?? {};
+        }
+      } catch (e) {
+        debugPrint('⚠️ Failed to fetch user details: $e');
+      }
+    }
+
     final prompt = _buildPrompt(
       goal: goal,
       level: level,
       daysPerWeek: daysPerWeek,
       equipment: equipment,
+      userDetails: userDetails,
     );
 
     final response = await _dio.post(
@@ -95,7 +113,14 @@ class WorkoutPlanRepository {
     required String level,
     required int daysPerWeek,
     required String equipment,
+    required Map<String, dynamic> userDetails,
   }) {
+    final weight = userDetails['weight'] ?? 80;
+    final height = userDetails['height'] ?? 180;
+    final age = userDetails['age'] ?? 30;
+    final gender = userDetails['gender'] ?? 'Male';
+    final activityLevel = userDetails['activityLevel'] ?? 'Moderately Active';
+
     return '''
 You are an expert fitness and nutrition coach. Generate a $daysPerWeek-day weekly workout plan AND a matching daily diet plan.
 
@@ -104,6 +129,11 @@ User details:
 - Fitness level: $level
 - Days per week: $daysPerWeek
 - Equipment available: $equipment
+- Weight: ${weight}kg
+- Height: ${height}cm
+- Age: $age
+- Gender: $gender
+- Activity Level: $activityLevel
 
 Return ONLY a valid JSON object with NO explanation, NO markdown, NO extra text.
 
@@ -188,10 +218,12 @@ Rules for workout:
 - Each exercise tip must be specific and actionable
 
 Rules for diet:
-- Calories and macros must match the goal: $goal
-- Protein target: at least 1.6g per kg of bodyweight (assume 80kg average)
-- Meals must add up to approximately the stated total calories
-- Meal examples must be practical, realistic everyday foods
+- Act as a professional nutritionist. Calculate the user's Total Daily Energy Expenditure (TDEE) based on their weight: ${weight}kg, height: ${height}cm, age: $age, gender: $gender, and activity level: $activityLevel.
+- Adjust the TDEE calories based on the goal: $goal (e.g., caloric deficit for weight loss, surplus for muscle gain).
+- Calories and macros must match this personalized calculation.
+- Protein target: at least 1.6g to 2.2g per kg of bodyweight (${weight}kg).
+- Meals must add up to approximately the stated total personalized calories.
+- Meal examples must be practical, realistic everyday foods.
 - Tips must be specific to the goal: $goal
 
 Return ONLY the JSON, nothing else.

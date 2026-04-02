@@ -18,7 +18,7 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
     ),
   );
 
-  // ── TTS ──────────────────────────────────────────────────────────────────
+
   final FlutterTts _tts = FlutterTts();
   String _lastSpoken = '';
   DateTime _lastSpeakTime = DateTime(2000);
@@ -40,7 +40,7 @@ class PoseBloc extends Bloc<PoseEvent, PoseState> {
     _initTts();
   }
 
-  // ── TTS setup ─────────────────────────────────────────────────────────────
+
 
   Future<void> _initTts() async {
     await _tts.setLanguage('en-US');

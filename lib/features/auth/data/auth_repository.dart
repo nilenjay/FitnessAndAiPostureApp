@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/constants/app_constants.dart';
 
 class AuthRepository {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -25,7 +26,7 @@ class AuthRepository {
 
     // Create Firestore user document
     await _firestore
-        .collection('users')
+        .collection(AppConstants.usersCollection)
         .doc(credential.user!.uid)
         .set({
       'uid': credential.user!.uid,

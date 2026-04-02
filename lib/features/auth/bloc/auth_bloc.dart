@@ -20,8 +20,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthSignOutRequested>(_onSignOutRequested);
   }
 
+  bool _isAuthenticating = false;
+
   void _onUserChanged(_UserChanged event, Emitter<AuthState> emit) {
-    emit(AuthAuthenticated(event.user));
+    if (!_isAuthenticating) {
+      emit(AuthAuthenticated(event.user));
+    }
   }
 
   void _onUserLoggedOut(_UserLoggedOut event, Emitter<AuthState> emit) {
@@ -43,6 +47,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       AuthSignUpRequested event,
       Emitter<AuthState> emit,
       ) async {
+    _isAuthenticating = true;
     emit(AuthLoading());
     try {
       await authRepository.signUp(
@@ -50,10 +55,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
         name: event.name,
       );
-      // Auth state stream will handle the authenticated state
+      _isAuthenticating = false;
+      final user = authRepository.currentUser;
+      if (user != null) {
+        emit(AuthAuthenticated(user));
+      }
     } on FirebaseAuthException catch (e) {
+      _isAuthenticating = false;
       emit(AuthError(_mapFirebaseError(e.code)));
     } catch (e) {
+      _isAuthenticating = false;
       emit(AuthError('An unexpected error occurred.'));
     }
   }
@@ -62,15 +73,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       AuthSignInRequested event,
       Emitter<AuthState> emit,
       ) async {
+    _isAuthenticating = true;
     emit(AuthLoading());
     try {
       await authRepository.signIn(
         email: event.email,
         password: event.password,
       );
+      _isAuthenticating = false;
+      final user = authRepository.currentUser;
+      if (user != null) {
+        emit(AuthAuthenticated(user));
+      }
     } on FirebaseAuthException catch (e) {
+      _isAuthenticating = false;
       emit(AuthError(_mapFirebaseError(e.code)));
     } catch (e) {
+      _isAuthenticating = false;
       emit(AuthError('An unexpected error occurred.'));
     }
   }
@@ -92,13 +111,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       case 'weak-password':
         return 'Password must be at least 6 characters.';
       case 'user-not-found':
-        return 'No account found with this email.';
+      case 'invalid-credential':
       case 'wrong-password':
-        return 'Incorrect password. Please try again.';
+        return 'Incorrect email or password. Please try again.';
       case 'too-many-requests':
         return 'Too many attempts. Please try again later.';
       default:
-        return 'Authentication failed. Please try again.';
+        return 'Authentication failed. Please try again. ($code)';
     }
   }
 

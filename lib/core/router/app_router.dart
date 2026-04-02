@@ -15,6 +15,7 @@ import '../../features/workout_plans/presentation/workout_plans_screen.dart';
 import '../../features/chat/presentation/chat_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/profile/presentation/profile_setup_screen.dart';
 import '../widgets/main_shell_screen.dart';
 import '../widgets/splash_screen.dart';
 
@@ -110,6 +111,10 @@ class AppRouter {
         GoRoute(
           path: '/profile',
           builder: (context, state) => const ProfileScreen(),
+        ),
+        GoRoute(
+          path: '/profile/edit',
+          builder: (context, state) => const ProfileSetupScreen(),
         ),
       ],
       errorBuilder: (context, state) => Scaffold(
