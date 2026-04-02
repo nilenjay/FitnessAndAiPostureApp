@@ -31,8 +31,8 @@ class NotificationService {
     // Initialize timezone
     tz.initializeTimeZones();
     try {
-      final timeZoneName = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(timeZoneName));
+      final timeZone = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(timeZone.identifier));
     } catch (e) {
       debugPrint('⚠️ Failed to get timezone: $e');
     }
@@ -84,9 +84,6 @@ class NotificationService {
 
   /// Schedule water reminders every [intervalHours] hours between
   /// [startHour] and [endHour] (24-hour format).
-  ///
-  /// Example: scheduleWaterReminders(intervalHours: 2, startHour: 8, endHour: 22)
-  /// → reminders at 08:00, 10:00, 12:00, 14:00, 16:00, 18:00, 20:00, 22:00
   Future<void> scheduleWaterReminders({
     int intervalHours = 2,
     int startHour = 8,
@@ -117,11 +114,11 @@ class NotificationService {
       final message = messages[slotIndex % messages.length];
 
       await _plugin.zonedSchedule(
-        _baseReminderId + slotIndex,
+        id: _baseReminderId + slotIndex,
         title: '💧 Time to Hydrate!',
         body: message,
         scheduledDate: scheduledDate,
-        const NotificationDetails(
+        notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
             _channelId,
             _channelName,
@@ -145,7 +142,7 @@ class NotificationService {
   Future<void> cancelWaterReminders() async {
     // Cancel all possible reminder slots (max 12 per day)
     for (int i = 0; i < 12; i++) {
-      await _plugin.cancel(_baseReminderId + i);
+      await _plugin.cancel(id: _baseReminderId + i);
     }
     debugPrint('🗑️ Cancelled all water reminders');
   }
@@ -164,10 +161,10 @@ class NotificationService {
     );
 
     await _plugin.show(
-      0,
-      '💧 Water Reminder',
-      'This is a test notification. Stay hydrated!',
-      details,
+      id: 0,
+      title: '💧 Water Reminder',
+      body: 'This is a test notification. Stay hydrated!',
+      notificationDetails: details,
     );
   }
 
