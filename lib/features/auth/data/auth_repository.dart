@@ -35,6 +35,7 @@ class AuthRepository {
       'createdAt': FieldValue.serverTimestamp(),
       'totalSessions': 0,
       'streak': 0,
+      'profileComplete': false,
     });
 
     return credential;
@@ -48,6 +49,29 @@ class AuthRepository {
       email: email,
       password: password,
     );
+  }
+
+  /// Check if the user has completed their profile setup.
+  Future<bool> isProfileComplete(String uid) async {
+    try {
+      final doc = await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(uid)
+          .get(const GetOptions(source: Source.serverAndCache))
+          .timeout(
+        const Duration(seconds: 6),
+        onTimeout: () => _firestore
+            .collection(AppConstants.usersCollection)
+            .doc(uid)
+            .get(const GetOptions(source: Source.cache)),
+      );
+      if (doc.exists) {
+        return doc.data()?['profileComplete'] == true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> signOut() async {

@@ -18,13 +18,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthSignUpRequested>(_onSignUpRequested);
     on<AuthSignInRequested>(_onSignInRequested);
     on<AuthSignOutRequested>(_onSignOutRequested);
+    on<AuthProfileCompleted>(_onProfileCompleted);
   }
 
   bool _isAuthenticating = false;
 
-  void _onUserChanged(_UserChanged event, Emitter<AuthState> emit) {
+  Future<void> _onUserChanged(_UserChanged event, Emitter<AuthState> emit) async {
     if (!_isAuthenticating) {
-      emit(AuthAuthenticated(event.user));
+      final complete = await authRepository.isProfileComplete(event.user.uid);
+      emit(AuthAuthenticated(event.user, profileComplete: complete));
     }
   }
 
@@ -58,7 +60,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _isAuthenticating = false;
       final user = authRepository.currentUser;
       if (user != null) {
-        emit(AuthAuthenticated(user));
+        // New sign-up → profile is NOT complete yet
+        emit(AuthAuthenticated(user, profileComplete: false));
       }
     } on FirebaseAuthException catch (e) {
       _isAuthenticating = false;
@@ -83,7 +86,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _isAuthenticating = false;
       final user = authRepository.currentUser;
       if (user != null) {
-        emit(AuthAuthenticated(user));
+        final complete = await authRepository.isProfileComplete(user.uid);
+        emit(AuthAuthenticated(user, profileComplete: complete));
       }
     } on FirebaseAuthException catch (e) {
       _isAuthenticating = false;
@@ -100,6 +104,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       ) async {
     await authRepository.signOut();
     emit(AuthUnauthenticated());
+  }
+
+  void _onProfileCompleted(
+      AuthProfileCompleted event,
+      Emitter<AuthState> emit,
+      ) {
+    final currentState = state;
+    if (currentState is AuthAuthenticated) {
+      emit(AuthAuthenticated(currentState.user, profileComplete: true));
+    }
   }
 
   String _mapFirebaseError(String code) {

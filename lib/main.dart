@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/services/notification_service.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/pose_detection/bloc/pose_bloc.dart';
@@ -13,6 +14,8 @@ import 'features/chat/bloc/chat_bloc.dart';
 import 'features/chat/data/chat_repository.dart';
 import 'features/workout_plans/bloc/workout_plan_bloc.dart';
 import 'features/workout_plans/data/workout_plan_repository.dart';
+import 'features/water_intake/bloc/water_intake_cubit.dart';
+import 'features/water_intake/data/water_intake_repository.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -20,6 +23,10 @@ void main() async {
   await dotenv.load(fileName: '.env');
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: false);
+
+  // Initialize notification service
+  await NotificationService.instance.init();
+
   runApp(const MyApp());
 }
 
@@ -55,6 +62,7 @@ class _MyAppState extends State<MyApp> {
         RepositoryProvider<WorkoutPlanRepository>(create: (_) => WorkoutPlanRepository()),
         RepositoryProvider<PoseRepository>(create: (_) => PoseRepository()),
         RepositoryProvider<ChatRepository>(create: (_) => ChatRepository()),
+        RepositoryProvider<WaterIntakeRepository>(create: (_) => WaterIntakeRepository()),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -72,6 +80,11 @@ class _MyAppState extends State<MyApp> {
           BlocProvider<ChatBloc>(
             create: (context) => ChatBloc(
               repository: context.read<ChatRepository>(),
+            ),
+          ),
+          BlocProvider<WaterIntakeCubit>(
+            create: (context) => WaterIntakeCubit(
+              repository: context.read<WaterIntakeRepository>(),
             ),
           ),
         ],

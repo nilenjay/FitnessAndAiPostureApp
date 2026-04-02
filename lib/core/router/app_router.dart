@@ -31,7 +31,7 @@ class AppRouter {
       redirect: (context, state) {
         final authState = authBloc.state;
         final isAuthenticated = authState is AuthAuthenticated;
-        final location = state.uri.path; // ✅ fixed: uri.path not matchedLocation
+        final location = state.uri.path;
 
         final isOnAuthScreen = location == '/login' ||
             location == '/signup' ||
@@ -45,8 +45,23 @@ class AppRouter {
           return '/login';
         }
 
-        if (isAuthenticated && (location == '/login' || location == '/signup')) {
-          return '/home';
+        // ── Profile onboarding redirect ──────────────────────────────────
+        if (isAuthenticated) {
+          final profileComplete =
+              (authState as AuthAuthenticated).profileComplete;
+
+          // New user hasn't completed profile → force setup
+          if (!profileComplete && location != '/profile/setup') {
+            return '/profile/setup';
+          }
+
+          // Profile is complete → don't let them back to auth or setup
+          if (profileComplete &&
+              (location == '/login' ||
+                  location == '/signup' ||
+                  location == '/profile/setup')) {
+            return '/home';
+          }
         }
 
         return null;
@@ -63,6 +78,13 @@ class AppRouter {
         GoRoute(
           path: '/signup',
           builder: (context, state) => const SignupScreen(),
+        ),
+
+        // Profile onboarding (full-screen, no bottom nav)
+        GoRoute(
+          path: '/profile/setup',
+          builder: (context, state) =>
+              const ProfileSetupScreen(isOnboarding: true),
         ),
 
         // Shell route: screens that share the bottom navigation bar

@@ -1,12 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../auth/bloc/auth_bloc.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
-  const ProfileSetupScreen({super.key});
+  /// When true, shows the onboarding variant (no back button, different title).
+  final bool isOnboarding;
+
+  const ProfileSetupScreen({super.key, this.isOnboarding = false});
 
   @override
   State<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
@@ -17,6 +22,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _weightController = TextEditingController();
   final _heightController = TextEditingController();
   final _ageController = TextEditingController();
+  final _waterGoalController = TextEditingController(text: '8');
 
   String _selectedGender = 'Male';
   String _selectedActivityLevel = 'Lightly Active';
@@ -42,6 +48,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     _weightController.dispose();
     _heightController.dispose();
     _ageController.dispose();
+    _waterGoalController.dispose();
     super.dispose();
   }
 
@@ -62,11 +69,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             _weightController.text = data['weight']?.toString() ?? '';
             _heightController.text = data['height']?.toString() ?? '';
             _ageController.text = data['age']?.toString() ?? '';
-            
+            _waterGoalController.text =
+                (data['waterGoal'] ?? 8).toString();
+
             if (data['gender'] != null && _genders.contains(data['gender'])) {
               _selectedGender = data['gender'];
             }
-            if (data['activityLevel'] != null && _activityLevels.contains(data['activityLevel'])) {
+            if (data['activityLevel'] != null &&
+                _activityLevels.contains(data['activityLevel'])) {
               _selectedActivityLevel = data['activityLevel'];
             }
           });
@@ -95,13 +105,21 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           'age': int.tryParse(_ageController.text) ?? 0,
           'gender': _selectedGender,
           'activityLevel': _selectedActivityLevel,
+          'waterGoal': int.tryParse(_waterGoalController.text) ?? 8,
+          'profileComplete': true,
         }, SetOptions(merge: true));
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile updated successfully!')),
-          );
-          context.pop(); // Go back to previous screen
+          if (widget.isOnboarding) {
+            // Tell AuthBloc profile is done, then route to home
+            context.read<AuthBloc>().add(AuthProfileCompleted());
+            context.go('/home');
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Profile updated successfully!')),
+            );
+            context.pop();
+          }
         }
       }
     } catch (e) {
@@ -121,7 +139,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Physical Details'),
+        title: Text(
+            widget.isOnboarding ? 'Complete Your Profile' : 'Edit Physical Details'),
+        automaticallyImplyLeading: !widget.isOnboarding,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -130,18 +150,23 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Help us personalize your experience',
-                style: TextStyle(
+              // Header
+              Text(
+                widget.isOnboarding
+                    ? 'Welcome! Tell us about yourself'
+                    : 'Help us personalize your experience',
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
                   color: AppTheme.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'These details ensure your AI-generated workouts and diet plans are perfectly calibrated for you.',
-                style: TextStyle(
+              Text(
+                widget.isOnboarding
+                    ? 'We need a few details to create your personalized workout and diet plans.'
+                    : 'These details ensure your AI-generated workouts and diet plans are perfectly calibrated for you.',
+                style: const TextStyle(
                   fontSize: 14,
                   color: AppTheme.textSecondary,
                 ),
@@ -151,30 +176,38 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               // Weight Input
               TextFormField(
                 controller: _weightController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 style: const TextStyle(color: AppTheme.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Weight (kg)',
                   hintText: 'e.g. 75.5',
-                  prefixIcon: const Icon(Icons.fitness_center, color: AppTheme.primary),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon:
+                      const Icon(Icons.fitness_center, color: AppTheme.primary),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 20),
 
               // Height Input
               TextFormField(
                 controller: _heightController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 style: const TextStyle(color: AppTheme.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Height (cm)',
                   hintText: 'e.g. 180',
-                  prefixIcon: const Icon(Icons.height, color: AppTheme.primary),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon:
+                      const Icon(Icons.height, color: AppTheme.primary),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 20),
 
@@ -187,22 +220,29 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   labelText: 'Age',
                   hintText: 'e.g. 28',
                   prefixIcon: const Icon(Icons.cake, color: AppTheme.primary),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 24),
 
               // Gender Dropdown
-              const Text('Gender', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+              const Text('Gender',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: _selectedGender,
                 dropdownColor: AppTheme.surface,
                 style: const TextStyle(color: AppTheme.textPrimary),
                 decoration: InputDecoration(
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
                 ),
                 items: _genders.map((gender) {
                   return DropdownMenuItem(value: gender, child: Text(gender));
@@ -214,15 +254,20 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               const SizedBox(height: 24),
 
               // Activity Level Dropdown
-              const Text('Daily Activity Level', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+              const Text('Daily Activity Level',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: _selectedActivityLevel,
                 dropdownColor: AppTheme.surface,
                 style: const TextStyle(color: AppTheme.textPrimary),
                 decoration: InputDecoration(
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
                 ),
                 items: _activityLevels.map((level) {
                   return DropdownMenuItem(value: level, child: Text(level));
@@ -230,6 +275,77 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 onChanged: (value) {
                   setState(() => _selectedActivityLevel = value!);
                 },
+              ),
+              const SizedBox(height: 24),
+
+              // ── Water Goal ─────────────────────────────────────────────────
+              const Text('Daily Water Goal (glasses)',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  // Decrease button
+                  _GoalAdjustButton(
+                    icon: Icons.remove,
+                    onTap: () {
+                      final current =
+                          int.tryParse(_waterGoalController.text) ?? 8;
+                      if (current > 1) {
+                        setState(() =>
+                            _waterGoalController.text = '${current - 1}');
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  // Goal input
+                  Expanded(
+                    child: TextFormField(
+                      controller: _waterGoalController,
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFF00E5FF),
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.water_drop,
+                            color: Color(0xFF00B8D4)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                      ),
+                      validator: (value) {
+                        final v = int.tryParse(value ?? '');
+                        if (v == null || v < 1 || v > 20) {
+                          return 'Enter 1–20';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Increase button
+                  _GoalAdjustButton(
+                    icon: Icons.add,
+                    onTap: () {
+                      final current =
+                          int.tryParse(_waterGoalController.text) ?? 8;
+                      if (current < 20) {
+                        setState(() =>
+                            _waterGoalController.text = '${current + 1}');
+                      }
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Recommended: 8 glasses (≈ 2 litres)',
+                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
               ),
               const SizedBox(height: 48),
 
@@ -241,22 +357,83 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: AppTheme.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   child: _isLoading
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2),
                         )
-                      : const Text(
-                          'Save Profile',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                      : Text(
+                          widget.isOnboarding
+                              ? 'Continue'
+                              : 'Save Profile',
+                          style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
                         ),
                 ),
               ),
+              
+              if (widget.isOnboarding) ...[
+                const SizedBox(height: 12),
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      // Allow skipping, but still mark profile as complete
+                      FirebaseFirestore.instance
+                          .collection(AppConstants.usersCollection)
+                          .doc(FirebaseAuth.instance.currentUser?.uid)
+                          .set({'profileComplete': true}, SetOptions(merge: true));
+                      context.read<AuthBloc>().add(AuthProfileCompleted());
+                      context.go('/home');
+                    },
+                    child: const Text(
+                      'Skip for now',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GoalAdjustButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _GoalAdjustButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: const Color(0xFF00B8D4).withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFF00B8D4).withOpacity(0.3),
+            ),
+          ),
+          child: Icon(icon, color: const Color(0xFF00E5FF), size: 22),
         ),
       ),
     );

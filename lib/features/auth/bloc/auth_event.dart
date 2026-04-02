@@ -26,6 +26,9 @@ class AuthSignInRequested extends AuthEvent {
 
 class AuthSignOutRequested extends AuthEvent {}
 
+/// Fired after the user completes the profile setup screen.
+class AuthProfileCompleted extends AuthEvent {}
+
 class _UserChanged extends AuthEvent {
   final User user;
   _UserChanged(this.user);

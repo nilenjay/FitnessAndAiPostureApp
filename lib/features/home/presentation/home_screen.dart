@@ -7,9 +7,23 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../auth/bloc/auth_bloc.dart';
+import '../../water_intake/bloc/water_intake_cubit.dart';
+import '../../water_intake/presentation/water_intake_card.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Load today's water intake when home screen opens
+    context.read<WaterIntakeCubit>().loadToday();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +42,9 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async => {}, // Firestore streams handle this automatically
+        onRefresh: () async {
+          context.read<WaterIntakeCubit>().loadToday();
+        },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(20),
@@ -37,7 +53,11 @@ class HomeScreen extends StatelessWidget {
             children: [
               // AI Health Twin Status (Quick view)
               _AIStatusCard(user?.uid),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // 💧 Water Intake Tracker
+              const WaterIntakeCard(),
+              const SizedBox(height: 20),
               
               // Start Workout CTA
               _StartWorkoutCard(context),

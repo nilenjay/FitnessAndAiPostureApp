@@ -10,6 +10,7 @@ class AppConstants {
   static const String usersCollection = 'users';
   static const String workoutPlansCollection = 'workout_plans'; // ✅ fixed: camelCase
   static const String sessionsCollection = 'sessions';
+  static const String waterIntakeCollection = 'water_intake';
 
   // Exercises supported by pose detection
   static const List<String> supportedExercises = [

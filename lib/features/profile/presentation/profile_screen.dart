@@ -57,14 +57,13 @@ class ProfileScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout, color: AppTheme.error),
             tooltip: 'Sign Out',
-            onPressed: () => _showLogoutDialog(context), // ✅ shows dialog
+            onPressed: () => _showLogoutDialog(context),
           ),
         ],
       ),
       body: user == null
           ? const Center(child: Text('No user found'))
           : FutureBuilder<DocumentSnapshot>(
-        // ✅ FutureBuilder instead of StreamBuilder — avoids Firestore deadlock
         future: FirebaseFirestore.instance
             .collection(AppConstants.usersCollection)
             .doc(user.uid)
@@ -92,6 +91,8 @@ class ProfileScreen extends StatelessWidget {
           final weight = userData['weight'];
           final height = userData['height'];
           final age = userData['age'];
+          final gender = userData['gender'];
+          final waterGoal = userData['waterGoal'] ?? 8;
 
           final initial = (user.displayName ?? 'A').substring(0, 1).toUpperCase();
 
@@ -136,12 +137,28 @@ class ProfileScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppTheme.divider),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    child: Column(
                       children: [
-                        _buildDetailItem('Weight', weight != null ? '${weight}kg' : '--'),
-                        _buildDetailItem('Height', height != null ? '${height}cm' : '--'),
-                        _buildDetailItem('Age', age != null ? '$age' : '--'),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildDetailItem('Weight', weight != null ? '${weight}kg' : '--'),
+                            _buildDetailItem('Height', height != null ? '${height}cm' : '--'),
+                            _buildDetailItem('Age', age != null ? '$age' : '--'),
+                          ],
+                        ),
+                        if (gender != null) ...[
+                          const SizedBox(height: 12),
+                          const Divider(color: AppTheme.divider, height: 1),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildDetailItem('Gender', '$gender'),
+                              _buildDetailItem('Water Goal', '$waterGoal 💧'),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
