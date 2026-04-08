@@ -66,7 +66,6 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-          // Messages
           Expanded(
             child: BlocConsumer<ChatBloc, ChatState>(
               listener: (context, state) {
@@ -86,7 +85,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 return ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   itemCount: state.messages.length + (state.isTyping ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == state.messages.length && state.isTyping) {
@@ -99,7 +100,6 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
 
-          // Input
           _buildInput(),
         ],
       ),
@@ -119,8 +119,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 color: AppTheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.smart_toy_outlined,
-                  size: 48, color: AppTheme.primary),
+              child: const Icon(
+                Icons.smart_toy_outlined,
+                size: 48,
+                color: AppTheme.primary,
+              ),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -234,10 +237,7 @@ class _ChatScreenState extends State<ChatScreen> {
             SizedBox(width: 10),
             Text(
               'Thinking...',
-              style: TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
             ),
           ],
         ),
@@ -272,7 +272,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 filled: true,
                 fillColor: AppTheme.surfaceVariant,
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 10),
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
@@ -283,8 +285,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
-                  borderSide:
-                      const BorderSide(color: AppTheme.primary, width: 1),
+                  borderSide: const BorderSide(
+                    color: AppTheme.primary,
+                    width: 1,
+                  ),
                 ),
               ),
             ),

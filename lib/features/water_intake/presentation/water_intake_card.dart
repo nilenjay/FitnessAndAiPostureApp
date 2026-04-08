@@ -50,7 +50,6 @@ class WaterIntakeCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header row
               Row(
                 children: [
                   Container(
@@ -96,10 +95,8 @@ class WaterIntakeCard extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // Progress ring + count
               Row(
                 children: [
-                  // Circular progress
                   SizedBox(
                     width: 72,
                     height: 72,
@@ -110,7 +107,6 @@ class WaterIntakeCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 20),
 
-                  // Count display
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,7 +146,6 @@ class WaterIntakeCard extends StatelessWidget {
                     ),
                   ),
 
-                  // + / - buttons
                   Column(
                     children: [
                       _WaterButton(
@@ -163,9 +158,8 @@ class WaterIntakeCard extends StatelessWidget {
                       _WaterButton(
                         icon: Icons.remove,
                         onTap: glasses > 0
-                            ? () => context
-                                .read<WaterIntakeCubit>()
-                                .removeGlass()
+                            ? () =>
+                                  context.read<WaterIntakeCubit>().removeGlass()
                             : null,
                         color: AppTheme.textSecondary,
                       ),
@@ -174,7 +168,6 @@ class WaterIntakeCard extends StatelessWidget {
                 ],
               ),
 
-              // Mini glass indicators
               const SizedBox(height: 16),
               Wrap(
                 spacing: 6,
@@ -215,16 +208,11 @@ class WaterIntakeCard extends StatelessWidget {
   }
 }
 
-// ─── Animated circular progress ring ─────────────────────────────────────────
-
 class _AnimatedWaterRing extends StatelessWidget {
   final double progress;
   final bool goalReached;
 
-  const _AnimatedWaterRing({
-    required this.progress,
-    required this.goalReached,
-  });
+  const _AnimatedWaterRing({required this.progress, required this.goalReached});
 
   @override
   Widget build(BuildContext context) {
@@ -234,16 +222,11 @@ class _AnimatedWaterRing extends StatelessWidget {
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
         return CustomPaint(
-          painter: _RingPainter(
-            progress: value,
-            goalReached: goalReached,
-          ),
+          painter: _RingPainter(progress: value, goalReached: goalReached),
           child: Center(
             child: Icon(
               goalReached ? Icons.check_circle : Icons.water_drop,
-              color: goalReached
-                  ? AppTheme.secondary
-                  : const Color(0xFF00E5FF),
+              color: goalReached ? AppTheme.secondary : const Color(0xFF00E5FF),
               size: 28,
             ),
           ),
@@ -264,7 +247,6 @@ class _RingPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = min(size.width, size.height) / 2 - 4;
 
-    // Background ring
     final bgPaint = Paint()
       ..color = Colors.white.withOpacity(0.08)
       ..style = PaintingStyle.stroke
@@ -272,11 +254,8 @@ class _RingPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     canvas.drawCircle(center, radius, bgPaint);
 
-    // Progress arc
     final fgPaint = Paint()
-      ..color = goalReached
-          ? AppTheme.secondary
-          : const Color(0xFF00E5FF)
+      ..color = goalReached ? AppTheme.secondary : const Color(0xFF00E5FF)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 5
       ..strokeCap = StrokeCap.round;
@@ -294,8 +273,6 @@ class _RingPainter extends CustomPainter {
   bool shouldRepaint(covariant _RingPainter old) =>
       old.progress != progress || old.goalReached != goalReached;
 }
-
-// ─── Small round +/- button ──────────────────────────────────────────────────
 
 class _WaterButton extends StatelessWidget {
   final IconData icon;

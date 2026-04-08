@@ -22,9 +22,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env');
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: false);
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: false,
+  );
 
-  // Initialize notification service
   await NotificationService.instance.init();
 
   runApp(const MyApp());
@@ -59,18 +60,21 @@ class _MyAppState extends State<MyApp> {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<AuthRepository>.value(value: _authRepository),
-        RepositoryProvider<WorkoutPlanRepository>(create: (_) => WorkoutPlanRepository()),
+        RepositoryProvider<WorkoutPlanRepository>(
+          create: (_) => WorkoutPlanRepository(),
+        ),
         RepositoryProvider<PoseRepository>(create: (_) => PoseRepository()),
         RepositoryProvider<ChatRepository>(create: (_) => ChatRepository()),
-        RepositoryProvider<WaterIntakeRepository>(create: (_) => WaterIntakeRepository()),
+        RepositoryProvider<WaterIntakeRepository>(
+          create: (_) => WaterIntakeRepository(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<AuthBloc>.value(value: _authBloc),
           BlocProvider<PoseBloc>(
-            create: (context) => PoseBloc(
-              poseRepository: context.read<PoseRepository>(),
-            ),
+            create: (context) =>
+                PoseBloc(poseRepository: context.read<PoseRepository>()),
           ),
           BlocProvider<WorkoutPlanBloc>(
             create: (context) => WorkoutPlanBloc(
@@ -78,9 +82,8 @@ class _MyAppState extends State<MyApp> {
             ),
           ),
           BlocProvider<ChatBloc>(
-            create: (context) => ChatBloc(
-              repository: context.read<ChatRepository>(),
-            ),
+            create: (context) =>
+                ChatBloc(repository: context.read<ChatRepository>()),
           ),
           BlocProvider<WaterIntakeCubit>(
             create: (context) => WaterIntakeCubit(

@@ -1,13 +1,9 @@
 class WaterIntake {
-  final String date; // 'YYYY-MM-DD'
+  final String date;
   final int glasses;
   final int goal;
 
-  const WaterIntake({
-    required this.date,
-    this.glasses = 0,
-    this.goal = 8,
-  });
+  const WaterIntake({required this.date, this.glasses = 0, this.goal = 8});
 
   double get progress => goal > 0 ? (glasses / goal).clamp(0.0, 1.0) : 0.0;
   bool get isGoalReached => glasses >= goal;
@@ -29,9 +25,6 @@ class WaterIntake {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'glasses': glasses,
-      'goal': goal,
-    };
+    return {'glasses': glasses, 'goal': goal};
   }
 }

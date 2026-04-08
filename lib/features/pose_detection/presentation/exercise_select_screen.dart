@@ -9,9 +9,7 @@ class ExerciseSelectScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Choose Exercise'),
-      ),
+      appBar: AppBar(title: const Text('Choose Exercise')),
       body: GridView.builder(
         padding: const EdgeInsets.all(16),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -70,10 +68,7 @@ class _ExerciseCard extends StatelessWidget {
             const SizedBox(height: 4),
             const Text(
               'AI Form Check',
-              style: TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
             ),
           ],
         ),
@@ -83,11 +78,16 @@ class _ExerciseCard extends StatelessWidget {
 
   IconData _getIcon(String exercise) {
     switch (exercise.toLowerCase()) {
-      case 'squat': return Icons.airline_seat_legroom_extra;
-      case 'pushup': return Icons.fitness_center;
-      case 'lunge': return Icons.directions_walk;
-      case 'plank': return Icons.timer;
-      default: return Icons.help_outline;
+      case 'squat':
+        return Icons.airline_seat_legroom_extra;
+      case 'pushup':
+        return Icons.fitness_center;
+      case 'lunge':
+        return Icons.directions_walk;
+      case 'plank':
+        return Icons.timer;
+      default:
+        return Icons.help_outline;
     }
   }
 }

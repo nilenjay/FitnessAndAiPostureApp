@@ -45,12 +45,10 @@ class _SignupScreenState extends State<SignupScreen> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
-            // Router redirect will handle navigation —
-            // new users go to /profile/setup, returning users go to /home
           } else if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
           }
         },
         child: SafeArea(
@@ -65,7 +63,10 @@ class _SignupScreenState extends State<SignupScreen> {
                   onPressed: () => context.go('/login'),
                 ),
                 const SizedBox(height: 20),
-                Text('Create account', style: Theme.of(context).textTheme.displayMedium),
+                Text(
+                  'Create account',
+                  style: Theme.of(context).textTheme.displayMedium,
+                ),
                 const SizedBox(height: 8),
                 Text(
                   'Start your AI-powered fitness journey',
@@ -83,8 +84,9 @@ class _SignupScreenState extends State<SignupScreen> {
                           hintText: 'Full name',
                           prefixIcon: Icon(Icons.person_outline, size: 20),
                         ),
-                        validator: (v) =>
-                        v == null || v.isEmpty ? 'Please enter your name' : null,
+                        validator: (v) => v == null || v.isEmpty
+                            ? 'Please enter your name'
+                            : null,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
@@ -94,8 +96,9 @@ class _SignupScreenState extends State<SignupScreen> {
                           hintText: 'Email address',
                           prefixIcon: Icon(Icons.email_outlined, size: 20),
                         ),
-                        validator: (v) =>
-                        v == null || !v.contains('@') ? 'Enter a valid email' : null,
+                        validator: (v) => v == null || !v.contains('@')
+                            ? 'Enter a valid email'
+                            : null,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
@@ -111,12 +114,14 @@ class _SignupScreenState extends State<SignupScreen> {
                                   : Icons.visibility_outlined,
                               size: 20,
                             ),
-                            onPressed: () =>
-                                setState(() => _obscurePassword = !_obscurePassword),
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
                           ),
                         ),
-                        validator: (v) =>
-                        v == null || v.length < 6 ? 'Min 6 characters' : null,
+                        validator: (v) => v == null || v.length < 6
+                            ? 'Min 6 characters'
+                            : null,
                       ),
                       const SizedBox(height: 32),
                       BlocBuilder<AuthBloc, AuthState>(
@@ -125,13 +130,13 @@ class _SignupScreenState extends State<SignupScreen> {
                             onPressed: state is AuthLoading ? null : _onSignUp,
                             child: state is AuthLoading
                                 ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.black,
-                              ),
-                            )
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.black,
+                                    ),
+                                  )
                                 : const Text('Create Account'),
                           );
                         },

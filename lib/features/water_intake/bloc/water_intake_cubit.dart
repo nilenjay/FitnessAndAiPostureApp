@@ -2,8 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../data/water_intake_model.dart';
 import '../data/water_intake_repository.dart';
-
-// ─── States ──────────────────────────────────────────────────────────────────
+import '../../../core/services/notification_service.dart';
 
 abstract class WaterIntakeState extends Equatable {
   @override
@@ -28,8 +27,6 @@ class WaterIntakeError extends WaterIntakeState {
   List<Object?> get props => [message];
 }
 
-// ─── Cubit ───────────────────────────────────────────────────────────────────
-
 class WaterIntakeCubit extends Cubit<WaterIntakeState> {
   final WaterIntakeRepository repository;
 
@@ -46,18 +43,38 @@ class WaterIntakeCubit extends Cubit<WaterIntakeState> {
   }
 
   Future<void> addGlass() async {
+    final currentState = state;
+    int previousGlasses = 0;
+    if (currentState is WaterIntakeLoaded) {
+      previousGlasses = currentState.intake.glasses;
+    }
+
     try {
       final intake = await repository.addGlass();
       emit(WaterIntakeLoaded(intake));
+
+      if (previousGlasses < intake.goal && intake.glasses >= intake.goal) {
+        await NotificationService.instance.syncWaterReminders(skipToday: true);
+      }
     } catch (e) {
       emit(WaterIntakeError('Failed to add glass'));
     }
   }
 
   Future<void> removeGlass() async {
+    final currentState = state;
+    int previousGlasses = 0;
+    if (currentState is WaterIntakeLoaded) {
+      previousGlasses = currentState.intake.glasses;
+    }
+
     try {
       final intake = await repository.removeGlass();
       emit(WaterIntakeLoaded(intake));
+
+      if (previousGlasses >= intake.goal && intake.glasses < intake.goal) {
+        await NotificationService.instance.syncWaterReminders(skipToday: false);
+      }
     } catch (e) {
       emit(WaterIntakeError('Failed to remove glass'));
     }

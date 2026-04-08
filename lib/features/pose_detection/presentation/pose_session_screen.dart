@@ -24,7 +24,6 @@ class _PoseSessionScreenState extends State<PoseSessionScreen>
   bool _isDetecting = false;
   InputImageRotation _rotation = InputImageRotation.rotation0deg;
 
-  // ── Camera direction state ─────────────────────────────────────────────
   CameraLensDirection _lensDirection = CameraLensDirection.back;
   bool _isFlipping = false;
 
@@ -44,17 +43,16 @@ class _PoseSessionScreenState extends State<PoseSessionScreen>
       _cameras = await availableCameras();
       if (_cameras.isEmpty) return;
 
-      // Prefer the requested direction, fallback to any available camera
       CameraDescription camera;
-      final preferred =
-      _cameras.where((c) => c.lensDirection == targetDirection).toList();
+      final preferred = _cameras
+          .where((c) => c.lensDirection == targetDirection)
+          .toList();
       if (preferred.isNotEmpty) {
         camera = preferred.first;
       } else {
         camera = _cameras.first;
       }
 
-      // Dispose existing controller before creating a new one
       await _cameraController?.stopImageStream().catchError((_) {});
       await _cameraController?.dispose();
       _cameraController = null;
@@ -88,7 +86,6 @@ class _PoseSessionScreenState extends State<PoseSessionScreen>
     }
   }
 
-  /// Flips between front and back camera.
   Future<void> _flipCamera() async {
     if (_isFlipping) return;
     setState(() => _isFlipping = true);
@@ -150,8 +147,8 @@ class _PoseSessionScreenState extends State<PoseSessionScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_cameraController == null ||
-        !_cameraController!.value.isInitialized) return;
+    if (_cameraController == null || !_cameraController!.value.isInitialized)
+      return;
     if (state == AppLifecycleState.inactive) {
       _cameraController?.dispose();
     } else if (state == AppLifecycleState.resumed) {
@@ -175,12 +172,15 @@ class _PoseSessionScreenState extends State<PoseSessionScreen>
     return BlocListener<PoseBloc, PoseState>(
       listener: (context, state) {
         if (state is PoseSessionDone) {
-          context.go('/workout/summary', extra: {
-            'exercise': state.exercise,
-            'reps': state.totalReps,
-            'score': state.score,
-            'feedback': state.feedbackList,
-          });
+          context.go(
+            '/workout/summary',
+            extra: {
+              'exercise': state.exercise,
+              'reps': state.totalReps,
+              'score': state.score,
+              'feedback': state.feedbackList,
+            },
+          );
         }
       },
       child: Scaffold(
@@ -188,15 +188,13 @@ class _PoseSessionScreenState extends State<PoseSessionScreen>
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // ── Camera preview ─────────────────────────────────────────────
             if (_isCameraInitialized && _cameraController != null)
               CameraPreview(_cameraController!)
             else
               const Center(
-                  child:
-                  CircularProgressIndicator(color: AppTheme.primary)),
+                child: CircularProgressIndicator(color: AppTheme.primary),
+              ),
 
-            // ── Skeleton overlay ───────────────────────────────────────────
             BlocBuilder<PoseBloc, PoseState>(
               builder: (context, state) {
                 if (state is PoseDetecting &&
@@ -218,7 +216,6 @@ class _PoseSessionScreenState extends State<PoseSessionScreen>
               },
             ),
 
-            // ── Top bar ────────────────────────────────────────────────────
             Positioned(
               top: 0,
               left: 0,
@@ -231,7 +228,6 @@ class _PoseSessionScreenState extends State<PoseSessionScreen>
               ),
             ),
 
-            // ── Bottom overlay ─────────────────────────────────────────────
             Positioned(
               bottom: 0,
               left: 0,
@@ -244,8 +240,6 @@ class _PoseSessionScreenState extends State<PoseSessionScreen>
     );
   }
 }
-
-// ─── Top bar ──────────────────────────────────────────────────────────────────
 
 class _TopBar extends StatelessWidget {
   final String exercise;
@@ -278,7 +272,6 @@ class _TopBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Back button
           GestureDetector(
             onTap: () => context.go('/workout/select'),
             child: Container(
@@ -287,13 +280,15 @@ class _TopBar extends StatelessWidget {
                 color: Colors.white.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.arrow_back_ios,
-                  color: Colors.white, size: 18),
+              child: const Icon(
+                Icons.arrow_back_ios,
+                color: Colors.white,
+                size: 18,
+              ),
             ),
           ),
           const SizedBox(width: 12),
 
-          // Exercise name
           Text(
             exercise.toUpperCase(),
             style: const TextStyle(
@@ -305,7 +300,6 @@ class _TopBar extends StatelessWidget {
           ),
           const Spacer(),
 
-          // ── Camera flip button ─────────────────────────────────────────
           if (onFlipCamera != null)
             GestureDetector(
               onTap: isFlipping ? null : onFlipCamera,
@@ -321,21 +315,24 @@ class _TopBar extends StatelessWidget {
                   ),
                   child: isFlipping
                       ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
-                  )
-                      : const Icon(Icons.flip_camera_ios_outlined,
-                      color: Colors.white, size: 20),
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.flip_camera_ios_outlined,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                 ),
               ),
             ),
 
-          // LIVE badge
           Container(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: AppTheme.error.withOpacity(0.9),
               borderRadius: BorderRadius.circular(20),
@@ -344,11 +341,14 @@ class _TopBar extends StatelessWidget {
               children: [
                 Icon(Icons.circle, color: Colors.white, size: 8),
                 SizedBox(width: 4),
-                Text('LIVE',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700)),
+                Text(
+                  'LIVE',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ],
             ),
           ),
@@ -357,8 +357,6 @@ class _TopBar extends StatelessWidget {
     );
   }
 }
-
-// ─── Bottom overlay ───────────────────────────────────────────────────────────
 
 class _BottomOverlay extends StatelessWidget {
   final VoidCallback onStop;
@@ -397,30 +395,35 @@ class _BottomOverlay extends StatelessWidget {
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Feedback banner
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
-                  color:
-                  _getFeedbackColor(feedback).withOpacity(0.15),
+                  color: _getFeedbackColor(feedback).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: _getFeedbackColor(feedback).withOpacity(0.4)),
+                    color: _getFeedbackColor(feedback).withOpacity(0.4),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(_getFeedbackIcon(feedback),
-                        color: _getFeedbackColor(feedback), size: 20),
+                    Icon(
+                      _getFeedbackIcon(feedback),
+                      color: _getFeedbackColor(feedback),
+                      size: 20,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         feedback,
                         style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500),
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ],
@@ -428,18 +431,19 @@ class _BottomOverlay extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // Stat chips
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _StatChip(
-                      label: 'REPS',
-                      value: '$repCount',
-                      color: AppTheme.primary),
+                    label: 'REPS',
+                    value: '$repCount',
+                    color: AppTheme.primary,
+                  ),
                   _StatChip(
-                      label: 'ANGLE',
-                      value: '${angle.toStringAsFixed(0)}°',
-                      color: AppTheme.secondary),
+                    label: 'ANGLE',
+                    value: '${angle.toStringAsFixed(0)}°',
+                    color: AppTheme.secondary,
+                  ),
                   _StatChip(
                     label: 'PHASE',
                     value: phase == RepPhase.down ? '▼ DOWN' : '▲ UP',
@@ -451,7 +455,6 @@ class _BottomOverlay extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // Stop button
               GestureDetector(
                 onTap: onStop,
                 child: Container(
@@ -462,19 +465,20 @@ class _BottomOverlay extends StatelessWidget {
                     color: AppTheme.error,
                     boxShadow: [
                       BoxShadow(
-                          color: AppTheme.error.withOpacity(0.4),
-                          blurRadius: 20,
-                          spreadRadius: 2)
+                        color: AppTheme.error.withOpacity(0.4),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                      ),
                     ],
                   ),
-                  child:
-                  const Icon(Icons.stop, color: Colors.white, size: 32),
+                  child: const Icon(Icons.stop, color: Colors.white, size: 32),
                 ),
               ),
               const SizedBox(height: 8),
-              const Text('Tap to finish',
-                  style:
-                  TextStyle(color: Colors.white54, fontSize: 12)),
+              const Text(
+                'Tap to finish',
+                style: TextStyle(color: Colors.white54, fontSize: 12),
+              ),
             ],
           );
         },
@@ -486,10 +490,12 @@ class _BottomOverlay extends StatelessWidget {
     final lower = feedback.toLowerCase();
     if (lower.contains('good') ||
         lower.contains('great') ||
-        lower.contains('perfect')) return AppTheme.secondary;
+        lower.contains('perfect'))
+      return AppTheme.secondary;
     if (lower.contains('straight') ||
         lower.contains('sagging') ||
-        lower.contains('hips')) return AppTheme.error;
+        lower.contains('hips'))
+      return AppTheme.error;
     return AppTheme.primary;
   }
 
@@ -497,22 +503,25 @@ class _BottomOverlay extends StatelessWidget {
     final lower = feedback.toLowerCase();
     if (lower.contains('good') ||
         lower.contains('great') ||
-        lower.contains('perfect')) return Icons.check_circle_outline;
+        lower.contains('perfect'))
+      return Icons.check_circle_outline;
     if (lower.contains('straight') ||
         lower.contains('keep') ||
-        lower.contains('hips')) return Icons.warning_amber_outlined;
+        lower.contains('hips'))
+      return Icons.warning_amber_outlined;
     return Icons.info_outline;
   }
 }
-
-// ─── Stat chip ────────────────────────────────────────────────────────────────
 
 class _StatChip extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
-  const _StatChip(
-      {required this.label, required this.value, required this.color});
+  const _StatChip({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -525,18 +534,24 @@ class _StatChip extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(value,
-              style: TextStyle(
-                  color: color,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800)),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(label,
-              style: const TextStyle(
-                  color: Colors.white54,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1)),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white54,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1,
+            ),
+          ),
         ],
       ),
     );

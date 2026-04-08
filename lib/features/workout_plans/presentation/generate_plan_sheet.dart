@@ -64,7 +64,6 @@ class _GeneratePlanSheetState extends State<GeneratePlanSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle bar
             Center(
               child: Container(
                 width: 40,
@@ -91,7 +90,6 @@ class _GeneratePlanSheetState extends State<GeneratePlanSheet> {
             ),
             const SizedBox(height: 24),
 
-            // Goal
             _SectionLabel('Fitness Goal'),
             _ChipSelector(
               options: _goals,
@@ -100,7 +98,6 @@ class _GeneratePlanSheetState extends State<GeneratePlanSheet> {
             ),
             const SizedBox(height: 20),
 
-            // Level
             _SectionLabel('Fitness Level'),
             _ChipSelector(
               options: _levels,
@@ -109,7 +106,6 @@ class _GeneratePlanSheetState extends State<GeneratePlanSheet> {
             ),
             const SizedBox(height: 20),
 
-            // Days per week
             _SectionLabel('Days Per Week: $_daysPerWeek'),
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
@@ -118,8 +114,10 @@ class _GeneratePlanSheetState extends State<GeneratePlanSheet> {
                 thumbColor: AppTheme.primary,
                 overlayColor: AppTheme.primary.withOpacity(0.2),
                 valueIndicatorColor: AppTheme.primary,
-                valueIndicatorTextStyle:
-                const TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
+                valueIndicatorTextStyle: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               child: Slider(
                 value: _daysPerWeek.toDouble(),
@@ -132,7 +130,6 @@ class _GeneratePlanSheetState extends State<GeneratePlanSheet> {
             ),
             const SizedBox(height: 20),
 
-            // Equipment
             _SectionLabel('Equipment Available'),
             _DropdownSelector(
               options: _equipmentOptions,

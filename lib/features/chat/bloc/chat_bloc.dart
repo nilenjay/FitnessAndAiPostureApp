@@ -12,8 +12,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final _uuid = const Uuid();
 
   ChatBloc({required ChatRepository repository})
-      : _repository = repository,
-        super(const ChatLoaded(messages: [], isTyping: false)) {
+    : _repository = repository,
+      super(const ChatLoaded(messages: [], isTyping: false)) {
     on<ChatSendMessage>(_onSendMessage);
     on<ChatClearHistory>(_onClearHistory);
   }
@@ -24,7 +24,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ) async {
     final current = state as ChatLoaded;
 
-    // Add user message
     final userMsg = ChatMessage(
       id: _uuid.v4(),
       content: event.message,
@@ -36,17 +35,16 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     emit(ChatLoaded(messages: updatedMessages, isTyping: true));
 
     try {
-      // Build conversation history for the API
       final history = updatedMessages
-          .map((m) => {
-                'role': m.isUser ? 'user' : 'assistant',
-                'content': m.content,
-              })
+          .map(
+            (m) => {
+              'role': m.isUser ? 'user' : 'assistant',
+              'content': m.content,
+            },
+          )
           .toList();
 
-      final reply = await _repository.sendMessage(
-        conversationHistory: history,
-      );
+      final reply = await _repository.sendMessage(conversationHistory: history);
 
       final aiMsg = ChatMessage(
         id: _uuid.v4(),
@@ -55,10 +53,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         timestamp: DateTime.now(),
       );
 
-      emit(ChatLoaded(
-        messages: [...updatedMessages, aiMsg],
-        isTyping: false,
-      ));
+      emit(ChatLoaded(messages: [...updatedMessages, aiMsg], isTyping: false));
     } catch (e) {
       final errorMsg = ChatMessage(
         id: _uuid.v4(),
@@ -67,17 +62,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         timestamp: DateTime.now(),
       );
 
-      emit(ChatLoaded(
-        messages: [...updatedMessages, errorMsg],
-        isTyping: false,
-      ));
+      emit(
+        ChatLoaded(messages: [...updatedMessages, errorMsg], isTyping: false),
+      );
     }
   }
 
-  void _onClearHistory(
-    ChatClearHistory event,
-    Emitter<ChatState> emit,
-  ) {
+  void _onClearHistory(ChatClearHistory event, Emitter<ChatState> emit) {
     emit(const ChatLoaded(messages: [], isTyping: false));
   }
 }

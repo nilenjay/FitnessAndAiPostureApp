@@ -71,15 +71,13 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
       body: BlocConsumer<WorkoutPlanBloc, WorkoutPlanState>(
         listener: (context, state) {
           if (state is WorkoutPlanError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
           }
           if (state is WorkoutPlanGenerated) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('✅ New plan generated and saved!'),
-              ),
+              const SnackBar(content: Text('✅ New plan generated and saved!')),
             );
             setState(() => _selectedDayIndex = 0);
           }
@@ -88,7 +86,8 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
           if (state is WorkoutPlanGenerating) return _GeneratingView();
           if (state is WorkoutPlanLoading) {
             return const Center(
-                child: CircularProgressIndicator(color: AppTheme.primary));
+              child: CircularProgressIndicator(color: AppTheme.primary),
+            );
           }
           if (state is WorkoutPlanLoaded) {
             if (state.plans.isEmpty) {
@@ -98,23 +97,23 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
             return TabBarView(
               controller: _tabController,
               children: [
-                // ── Workout tab ──────────────────────────────────────────────
                 _PlanView(
                   plans: state.plans,
                   selectedPlan: selectedPlan,
                   selectedDayIndex: _selectedDayIndex,
                   onDaySelected: (i) => setState(() => _selectedDayIndex = i),
                   onPlanSelected: (plan) {
-                    context
-                        .read<WorkoutPlanBloc>()
-                        .add(WorkoutPlanSelect(plan));
+                    context.read<WorkoutPlanBloc>().add(
+                      WorkoutPlanSelect(plan),
+                    );
                     setState(() => _selectedDayIndex = 0);
                   },
-                  onDelete: (id) =>
-                      context.read<WorkoutPlanBloc>().add(WorkoutPlanDelete(id)),
+                  onDelete: (id) => context.read<WorkoutPlanBloc>().add(
+                    WorkoutPlanDelete(id),
+                  ),
                   onGenerate: _showGenerateSheet,
                 ),
-                // ── Diet tab ─────────────────────────────────────────────────
+
                 selectedPlan.dietPlan != null
                     ? _DietView(dietPlan: selectedPlan.dietPlan!)
                     : _NoDietView(onGenerate: _showGenerateSheet),
@@ -129,14 +128,14 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.black,
         icon: const Icon(Icons.auto_awesome),
-        label: const Text('New Plan',
-            style: TextStyle(fontWeight: FontWeight.w700)),
+        label: const Text(
+          'New Plan',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
       ),
     );
   }
 }
-
-// ─── Diet views ──────────────────────────────────────────────────────────────
 
 class _NoDietView extends StatelessWidget {
   final VoidCallback onGenerate;
@@ -151,19 +150,27 @@ class _NoDietView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 80, height: 80,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.1),
-                  shape: BoxShape.circle),
-              child:
-              const Icon(Icons.restaurant_menu, color: AppTheme.primary, size: 40),
+                color: AppTheme.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.restaurant_menu,
+                color: AppTheme.primary,
+                size: 40,
+              ),
             ),
             const SizedBox(height: 20),
-            const Text('No Diet Plan',
-                style: TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700)),
+            const Text(
+              'No Diet Plan',
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const SizedBox(height: 8),
             const Text(
               'Generate a new plan to get a personalised diet with macros and meal suggestions.',
@@ -192,7 +199,6 @@ class _DietView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // ── Strategy label ──────────────────────────────────────────────────
         if (dietPlan.goal.isNotEmpty) ...[
           Container(
             padding: const EdgeInsets.all(14),
@@ -203,15 +209,20 @@ class _DietView extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.info_outline, color: AppTheme.primary, size: 18),
+                const Icon(
+                  Icons.info_outline,
+                  color: AppTheme.primary,
+                  size: 18,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     dietPlan.goal,
                     style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 13,
-                        height: 1.5),
+                      color: AppTheme.textPrimary,
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
                   ),
                 ),
               ],
@@ -220,7 +231,6 @@ class _DietView extends StatelessWidget {
           const SizedBox(height: 16),
         ],
 
-        // ── Macro cards ─────────────────────────────────────────────────────
         const _SectionHeader('Daily targets'),
         const SizedBox(height: 10),
         Row(
@@ -271,7 +281,6 @@ class _DietView extends StatelessWidget {
           ],
         ),
 
-        // ── Macro bar ───────────────────────────────────────────────────────
         const SizedBox(height: 16),
         _MacroBar(
           proteinG: dietPlan.proteinG,
@@ -279,13 +288,11 @@ class _DietView extends StatelessWidget {
           fatG: dietPlan.fatG,
         ),
 
-        // ── Meals ───────────────────────────────────────────────────────────
         const SizedBox(height: 20),
         const _SectionHeader('Meal suggestions'),
         const SizedBox(height: 10),
         ...dietPlan.meals.map((meal) => _MealCard(meal: meal)),
 
-        // ── Tips ────────────────────────────────────────────────────────────
         if (dietPlan.tips.isNotEmpty) ...[
           const SizedBox(height: 20),
           const _SectionHeader('Nutrition tips'),
@@ -304,11 +311,12 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text,
-        style: Theme.of(context)
-            .textTheme
-            .titleMedium
-            ?.copyWith(fontWeight: FontWeight.w700));
+    return Text(
+      text,
+      style: Theme.of(
+        context,
+      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+    );
   }
 }
 
@@ -318,12 +326,13 @@ class _MacroCard extends StatelessWidget {
   final String unit;
   final Color color;
   final IconData icon;
-  const _MacroCard(
-      {required this.label,
-        required this.value,
-        required this.unit,
-        required this.color,
-        required this.icon});
+  const _MacroCard({
+    required this.label,
+    required this.value,
+    required this.unit,
+    required this.color,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -341,18 +350,28 @@ class _MacroCard extends StatelessWidget {
             children: [
               Icon(icon, color: color, size: 18),
               const SizedBox(width: 6),
-              Text(label,
-                  style: const TextStyle(
-                      color: AppTheme.textSecondary, fontSize: 12)),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(value,
-              style: TextStyle(
-                  color: color, fontSize: 22, fontWeight: FontWeight.w800)),
-          Text(unit,
-              style: const TextStyle(
-                  color: AppTheme.textSecondary, fontSize: 11)),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          Text(
+            unit,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+          ),
         ],
       ),
     );
@@ -363,12 +382,14 @@ class _MacroBar extends StatelessWidget {
   final int proteinG;
   final int carbsG;
   final int fatG;
-  const _MacroBar(
-      {required this.proteinG, required this.carbsG, required this.fatG});
+  const _MacroBar({
+    required this.proteinG,
+    required this.carbsG,
+    required this.fatG,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Convert to calories for proportion (protein=4, carbs=4, fat=9)
     final pCal = proteinG * 4;
     final cCal = carbsG * 4;
     final fCal = fatG * 9;
@@ -378,8 +399,10 @@ class _MacroBar extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Macro split (by calories)',
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+        const Text(
+          'Macro split (by calories)',
+          style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+        ),
         const SizedBox(height: 6),
         ClipRRect(
           borderRadius: BorderRadius.circular(6),
@@ -387,13 +410,11 @@ class _MacroBar extends StatelessWidget {
             children: [
               Flexible(
                 flex: (pCal / total * 100).round(),
-                child: Container(
-                    height: 12, color: AppTheme.secondary),
+                child: Container(height: 12, color: AppTheme.secondary),
               ),
               Flexible(
                 flex: (cCal / total * 100).round(),
-                child: Container(
-                    height: 12, color: const Color(0xFFF4A623)),
+                child: Container(height: 12, color: const Color(0xFFF4A623)),
               ),
               Flexible(
                 flex: (fCal / total * 100).round(),
@@ -427,14 +448,18 @@ class _BarLegend extends StatelessWidget {
     return Row(
       children: [
         Container(
-            width: 10,
-            height: 10,
-            decoration:
-            BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
         const SizedBox(width: 4),
-        Text(label,
-            style: const TextStyle(
-                color: AppTheme.textSecondary, fontSize: 11)),
+        Text(
+          label,
+          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+        ),
       ],
     );
   }
@@ -459,48 +484,58 @@ class _MealCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(meal.name,
-                  style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14)),
+              Text(
+                meal.name,
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
               const Spacer(),
               Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: AppTheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text('${meal.calories} kcal',
-                    style: const TextStyle(
-                        color: AppTheme.primary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700)),
+                child: Text(
+                  '${meal.calories} kcal',
+                  style: const TextStyle(
+                    color: AppTheme.primary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
               const SizedBox(width: 6),
               Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: AppTheme.secondary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text('${meal.proteinG}g protein',
-                    style: const TextStyle(
-                        color: AppTheme.secondary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700)),
+                child: Text(
+                  '${meal.proteinG}g protein',
+                  style: const TextStyle(
+                    color: AppTheme.secondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ],
           ),
           if (meal.example.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(meal.example,
-                style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 13,
-                    height: 1.4)),
+            Text(
+              meal.example,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
           ],
         ],
       ),
@@ -524,21 +559,27 @@ class _TipTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.lightbulb_outline,
-              color: AppTheme.primary, size: 16),
+          const Icon(
+            Icons.lightbulb_outline,
+            color: AppTheme.primary,
+            size: 16,
+          ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(tip,
-                style: const TextStyle(
-                    color: AppTheme.textPrimary, fontSize: 13, height: 1.4)),
+            child: Text(
+              tip,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-// ─── Workout tab helpers (unchanged from original) ────────────────────────────
 
 class _GeneratingView extends StatelessWidget {
   @override
@@ -548,19 +589,27 @@ class _GeneratingView extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           SizedBox(
-              width: 56,
-              height: 56,
-              child: CircularProgressIndicator(
-                  strokeWidth: 3, color: AppTheme.primary)),
+            width: 56,
+            height: 56,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              color: AppTheme.primary,
+            ),
+          ),
           SizedBox(height: 24),
-          Text('AI is crafting your plan...',
-              style: TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700)),
+          Text(
+            'AI is crafting your plan...',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           SizedBox(height: 8),
-          Text('Personalising exercises and diet just for you',
-              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
+          Text(
+            'Personalising exercises and diet just for you',
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+          ),
         ],
       ),
     );
@@ -583,17 +632,24 @@ class _EmptyView extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.1),
-                  shape: BoxShape.circle),
-              child: const Icon(Icons.auto_awesome,
-                  color: AppTheme.primary, size: 40),
+                color: AppTheme.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.auto_awesome,
+                color: AppTheme.primary,
+                size: 40,
+              ),
             ),
             const SizedBox(height: 20),
-            const Text('No Plans Yet',
-                style: TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700)),
+            const Text(
+              'No Plans Yet',
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const SizedBox(height: 8),
             const Text(
               'Let AI generate a personalised workout + diet plan tailored to your goals',
@@ -635,7 +691,10 @@ class _PlanView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selectedDay = selectedPlan.days.isNotEmpty
-        ? selectedPlan.days[selectedDayIndex.clamp(0, selectedPlan.days.length - 1)]
+        ? selectedPlan.days[selectedDayIndex.clamp(
+            0,
+            selectedPlan.days.length - 1,
+          )]
         : null;
 
     return Column(
@@ -654,19 +713,16 @@ class _PlanView extends StatelessWidget {
                 return GestureDetector(
                   onTap: () => onPlanSelected(plan),
                   child: Container(
-                    margin:
-                    const EdgeInsets.only(right: 8, top: 4, bottom: 4),
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 14),
+                    margin: const EdgeInsets.only(right: 8, top: 4, bottom: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppTheme.primary.withOpacity(0.15)
                           : AppTheme.surface,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                          color: isSelected
-                              ? AppTheme.primary
-                              : AppTheme.divider),
+                        color: isSelected ? AppTheme.primary : AppTheme.divider,
+                      ),
                     ),
                     child: Center(
                       child: Text(
@@ -701,32 +757,43 @@ class _PlanView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(selectedPlan.goal,
-                        style: const TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700)),
+                    Text(
+                      selectedPlan.goal,
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
                         Text(
-                            '${selectedPlan.level} · ${selectedPlan.daysPerWeek} days/week',
-                            style: const TextStyle(
-                                color: AppTheme.textSecondary, fontSize: 13)),
+                          '${selectedPlan.level} · ${selectedPlan.daysPerWeek} days/week',
+                          style: const TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
                         if (selectedPlan.dietPlan != null) ...[
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AppTheme.secondary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Text('+ Diet',
-                                style: TextStyle(
-                                    color: AppTheme.secondary,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700)),
+                            child: const Text(
+                              '+ Diet',
+                              style: TextStyle(
+                                color: AppTheme.secondary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                         ],
                       ],
@@ -735,27 +802,37 @@ class _PlanView extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline,
-                    color: AppTheme.error, size: 20),
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: AppTheme.error,
+                  size: 20,
+                ),
                 onPressed: () => showDialog(
                   context: context,
                   builder: (dialogContext) => AlertDialog(
                     backgroundColor: AppTheme.surface,
-                    title: const Text('Delete Plan',
-                        style: TextStyle(color: AppTheme.textPrimary)),
-                    content: const Text('Are you sure?',
-                        style: TextStyle(color: AppTheme.textSecondary)),
+                    title: const Text(
+                      'Delete Plan',
+                      style: TextStyle(color: AppTheme.textPrimary),
+                    ),
+                    content: const Text(
+                      'Are you sure?',
+                      style: TextStyle(color: AppTheme.textSecondary),
+                    ),
                     actions: [
                       TextButton(
-                          onPressed: () => Navigator.pop(dialogContext),
-                          child: const Text('Cancel')),
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: const Text('Cancel'),
+                      ),
                       TextButton(
                         onPressed: () {
                           Navigator.pop(dialogContext);
                           onDelete(selectedPlan.id);
                         },
-                        child: const Text('Delete',
-                            style: TextStyle(color: AppTheme.error)),
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(color: AppTheme.error),
+                        ),
                       ),
                     ],
                   ),
@@ -840,15 +917,20 @@ class _DayDetail extends StatelessWidget {
           children: [
             Icon(Icons.hotel, color: AppTheme.primary, size: 52),
             SizedBox(height: 16),
-            Text('Rest Day',
-                style: TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800)),
+            Text(
+              'Rest Day',
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
             SizedBox(height: 8),
-            Text('Recovery is part of training.\nRest, hydrate, and come back stronger!',
-                style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-                textAlign: TextAlign.center),
+            Text(
+              'Recovery is part of training.\nRest, hydrate, and come back stronger!',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       );
@@ -867,21 +949,27 @@ class _DayDetail extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.track_changes, color: AppTheme.primary, size: 14),
+              const Icon(
+                Icons.track_changes,
+                color: AppTheme.primary,
+                size: 14,
+              ),
               const SizedBox(width: 6),
-              Text(day.focus,
-                  style: const TextStyle(
-                      color: AppTheme.primary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600)),
+              Text(
+                day.focus,
+                style: const TextStyle(
+                  color: AppTheme.primary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 16),
-        ...day.exercises
-            .asMap()
-            .entries
-            .map((e) => _ExerciseCard(index: e.key + 1, exercise: e.value)),
+        ...day.exercises.asMap().entries.map(
+          (e) => _ExerciseCard(index: e.key + 1, exercise: e.value),
+        ),
       ],
     );
   }
@@ -911,22 +999,31 @@ class _ExerciseCard extends StatelessWidget {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8)),
+                  color: AppTheme.primary.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Center(
-                    child: Text('$index',
-                        style: const TextStyle(
-                            color: AppTheme.primary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800))),
+                  child: Text(
+                    '$index',
+                    style: const TextStyle(
+                      color: AppTheme.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                  child: Text(exercise.name,
-                      style: const TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700))),
+                child: Text(
+                  exercise.name,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -944,18 +1041,27 @@ class _ExerciseCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                  color: AppTheme.surfaceVariant,
-                  borderRadius: BorderRadius.circular(8)),
+                color: AppTheme.surfaceVariant,
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.lightbulb_outline,
-                      color: AppTheme.secondary, size: 14),
+                  const Icon(
+                    Icons.lightbulb_outline,
+                    color: AppTheme.secondary,
+                    size: 14,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
-                      child: Text(exercise.tip,
-                          style: const TextStyle(
-                              color: AppTheme.textSecondary, fontSize: 12))),
+                    child: Text(
+                      exercise.tip,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -976,18 +1082,23 @@ class _MiniStat extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-          color: AppTheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(8)),
+        color: AppTheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Column(
         children: [
-          Text(value,
-              style: const TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700)),
-          Text(label,
-              style: const TextStyle(
-                  color: AppTheme.textSecondary, fontSize: 10)),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 10),
+          ),
         ],
       ),
     );

@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +6,7 @@ import '../data/auth_repository.dart';
 import 'auth_state.dart';
 
 part 'auth_event.dart';
+
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository authRepository;
   StreamSubscription<User?>? _authSubscription;
@@ -23,7 +23,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   bool _isAuthenticating = false;
 
-  Future<void> _onUserChanged(_UserChanged event, Emitter<AuthState> emit) async {
+  Future<void> _onUserChanged(
+    _UserChanged event,
+    Emitter<AuthState> emit,
+  ) async {
     if (!_isAuthenticating) {
       final complete = await authRepository.isProfileComplete(event.user.uid);
       emit(AuthAuthenticated(event.user, profileComplete: complete));
@@ -46,9 +49,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _onSignUpRequested(
-      AuthSignUpRequested event,
-      Emitter<AuthState> emit,
-      ) async {
+    AuthSignUpRequested event,
+    Emitter<AuthState> emit,
+  ) async {
     _isAuthenticating = true;
     emit(AuthLoading());
     try {
@@ -60,7 +63,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _isAuthenticating = false;
       final user = authRepository.currentUser;
       if (user != null) {
-        // New sign-up → profile is NOT complete yet
         emit(AuthAuthenticated(user, profileComplete: false));
       }
     } on FirebaseAuthException catch (e) {
@@ -73,16 +75,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _onSignInRequested(
-      AuthSignInRequested event,
-      Emitter<AuthState> emit,
-      ) async {
+    AuthSignInRequested event,
+    Emitter<AuthState> emit,
+  ) async {
     _isAuthenticating = true;
     emit(AuthLoading());
     try {
-      await authRepository.signIn(
-        email: event.email,
-        password: event.password,
-      );
+      await authRepository.signIn(email: event.email, password: event.password);
       _isAuthenticating = false;
       final user = authRepository.currentUser;
       if (user != null) {
@@ -99,17 +98,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _onSignOutRequested(
-      AuthSignOutRequested event,
-      Emitter<AuthState> emit,
-      ) async {
+    AuthSignOutRequested event,
+    Emitter<AuthState> emit,
+  ) async {
     await authRepository.signOut();
     emit(AuthUnauthenticated());
   }
 
   void _onProfileCompleted(
-      AuthProfileCompleted event,
-      Emitter<AuthState> emit,
-      ) {
+    AuthProfileCompleted event,
+    Emitter<AuthState> emit,
+  ) {
     final currentState = state;
     if (currentState is AuthAuthenticated) {
       emit(AuthAuthenticated(currentState.user, profileComplete: true));
@@ -141,4 +140,3 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     return super.close();
   }
 }
-

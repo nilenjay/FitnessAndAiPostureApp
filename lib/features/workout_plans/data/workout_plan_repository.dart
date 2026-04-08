@@ -12,15 +12,17 @@ class WorkoutPlanRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final _uuid = const Uuid();
 
-  late final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'https://api.groq.com',
-    connectTimeout: const Duration(seconds: 15),
-    receiveTimeout: const Duration(seconds: 60),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ${AppConstants.groqApiKey}',
-    },
-  ));
+  late final Dio _dio = Dio(
+    BaseOptions(
+      baseUrl: 'https://api.groq.com',
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 60),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${AppConstants.groqApiKey}',
+      },
+    ),
+  );
 
   Future<WorkoutPlan> generatePlan({
     required String goal,
@@ -28,7 +30,6 @@ class WorkoutPlanRepository {
     required int daysPerWeek,
     required String equipment,
   }) async {
-    // Fetch user details first
     Map<String, dynamic> userDetails = {};
     final uid = _auth.currentUser?.uid;
     if (uid != null) {
@@ -61,7 +62,7 @@ class WorkoutPlanRepository {
           {
             'role': 'system',
             'content':
-            'You are an expert fitness and nutrition coach. Return ONLY valid JSON with no markdown fences or extra text.',
+                'You are an expert fitness and nutrition coach. Return ONLY valid JSON with no markdown fences or extra text.',
           },
           {'role': 'user', 'content': prompt},
         ],
@@ -81,7 +82,6 @@ class WorkoutPlanRepository {
 
     final Map<String, dynamic> json = jsonDecode(cleaned);
 
-    // Parse diet plan if present
     DietPlan? dietPlan;
     if (json['dietPlan'] != null) {
       try {
@@ -230,8 +230,6 @@ Return ONLY the JSON, nothing else.
 ''';
   }
 
-  // ─── Firestore ─────────────────────────────────────────────────────────────
-
   Future<void> _savePlan(WorkoutPlan plan) async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) {
@@ -264,17 +262,17 @@ Return ONLY the JSON, nothing else.
           .limit(10)
           .get(const GetOptions(source: Source.serverAndCache))
           .timeout(
-        const Duration(seconds: 6),
-        onTimeout: () async {
-          debugPrint('⚠️ Server timeout, falling back to cache');
-          return await _firestore
-              .collection(AppConstants.usersCollection)
-              .doc(uid)
-              .collection(AppConstants.workoutPlansCollection)
-              .limit(10)
-              .get(const GetOptions(source: Source.cache));
-        },
-      );
+            const Duration(seconds: 6),
+            onTimeout: () async {
+              debugPrint('⚠️ Server timeout, falling back to cache');
+              return await _firestore
+                  .collection(AppConstants.usersCollection)
+                  .doc(uid)
+                  .collection(AppConstants.workoutPlansCollection)
+                  .limit(10)
+                  .get(const GetOptions(source: Source.cache));
+            },
+          );
 
       final plans = <WorkoutPlan>[];
       for (final doc in snapshot.docs) {

@@ -4,8 +4,10 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../constants/app_constants.dart';
 
-/// Centralized notification service for water intake reminders.
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
@@ -15,20 +17,16 @@ class NotificationService {
 
   bool _initialized = false;
 
-  // Notification channel details
   static const String _channelId = 'water_reminder_channel';
   static const String _channelName = 'Water Reminders';
   static const String _channelDescription =
       'Periodic reminders to drink water throughout the day';
 
-  // Notification IDs for scheduled reminders (one per slot)
   static const int _baseReminderId = 1000;
 
-  /// Initialize the notification plugin and timezone database.
   Future<void> init() async {
     if (_initialized) return;
 
-    // Initialize timezone
     tz.initializeTimeZones();
     try {
       final timeZone = await FlutterTimezone.getLocalTimezone();
@@ -37,9 +35,9 @@ class NotificationService {
       debugPrint('⚠️ Failed to get timezone: $e');
     }
 
-    // Platform-specific initialization
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
 
     const darwinSettings = DarwinInitializationSettings(
       requestSoundPermission: false,
@@ -62,16 +60,19 @@ class NotificationService {
     debugPrint('✅ NotificationService initialized');
   }
 
-  /// Request notification permissions (Android 13+ & iOS).
   Future<bool> requestPermission() async {
     if (Platform.isAndroid) {
-      final android = _plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       final granted = await android?.requestNotificationsPermission();
       return granted ?? false;
     } else if (Platform.isIOS) {
-      final ios = _plugin.resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin>();
+      final ios = _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
       final granted = await ios?.requestPermissions(
         alert: true,
         badge: true,
@@ -82,21 +83,18 @@ class NotificationService {
     return false;
   }
 
-  /// Schedule water reminders every [intervalHours] hours between
-  /// [startHour] and [endHour] (24-hour format).
   Future<void> scheduleWaterReminders({
     int intervalHours = 2,
     int startHour = 8,
     int endHour = 22,
+    bool skipToday = false,
   }) async {
-    // Cancel existing reminders first
     await cancelWaterReminders();
 
     final now = tz.TZDateTime.now(tz.local);
     int slotIndex = 0;
 
     for (int hour = startHour; hour <= endHour; hour += intervalHours) {
-      // Schedule for today if the hour hasn't passed, otherwise tomorrow
       var scheduledDate = tz.TZDateTime(
         tz.local,
         now.year,
@@ -106,7 +104,7 @@ class NotificationService {
         0,
       );
 
-      if (scheduledDate.isBefore(now)) {
+      if (skipToday || scheduledDate.isBefore(now)) {
         scheduledDate = scheduledDate.add(const Duration(days: 1));
       }
 
@@ -128,26 +126,55 @@ class NotificationService {
             icon: '@mipmap/ic_launcher',
           ),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time, // repeats daily
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
       );
 
       slotIndex++;
     }
 
-    debugPrint('✅ Scheduled $slotIndex water reminders ($startHour:00 - $endHour:00, every ${intervalHours}h)');
+    debugPrint(
+      '✅ Scheduled $slotIndex water reminders ($startHour:00 - $endHour:00, every ${intervalHours}h)',
+    );
   }
 
-  /// Cancel all water reminder notifications.
+  Future<void> syncWaterReminders({bool skipToday = false}) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final doc = await FirebaseFirestore.instance
+          .collection(AppConstants.usersCollection)
+          .doc(user.uid)
+          .get();
+
+      if (doc.exists) {
+        final data = doc.data()!;
+        final enabled = data['waterReminders'] ?? true;
+
+        if (!enabled) {
+          await cancelWaterReminders();
+          return;
+        }
+
+        final interval = data['reminderInterval'] ?? 2;
+        await scheduleWaterReminders(
+          intervalHours: interval,
+          skipToday: skipToday,
+        );
+      }
+    } catch (e) {
+      debugPrint('⚠️ Failed to sync water reminders: $e');
+    }
+  }
+
   Future<void> cancelWaterReminders() async {
-    // Cancel all possible reminder slots (max 12 per day)
     for (int i = 0; i < 12; i++) {
       await _plugin.cancel(id: _baseReminderId + i);
     }
     debugPrint('🗑️ Cancelled all water reminders');
   }
 
-  /// Show an immediate test notification (useful for debugging).
   Future<void> showTestNotification() async {
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -168,15 +195,15 @@ class NotificationService {
     );
   }
 
-  /// Check if there are any pending water reminders.
   Future<bool> hasActiveReminders() async {
     final pending = await _plugin.pendingNotificationRequests();
-    return pending.any((r) => r.id >= _baseReminderId && r.id < _baseReminderId + 12);
+    return pending.any(
+      (r) => r.id >= _baseReminderId && r.id < _baseReminderId + 12,
+    );
   }
 
   void _onNotificationTap(NotificationResponse response) {
     debugPrint('Notification tapped: ${response.payload}');
-    // Could navigate to water intake screen in the future
   }
 
   List<String> get _reminderMessages => const [

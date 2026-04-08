@@ -11,7 +11,11 @@ class AuthSignUpRequested extends AuthEvent {
   final String email;
   final String password;
   final String name;
-  AuthSignUpRequested({required this.email, required this.password, required this.name});
+  AuthSignUpRequested({
+    required this.email,
+    required this.password,
+    required this.name,
+  });
   @override
   List<Object?> get props => [email, password, name];
 }
@@ -26,7 +30,6 @@ class AuthSignInRequested extends AuthEvent {
 
 class AuthSignOutRequested extends AuthEvent {}
 
-/// Fired after the user completes the profile setup screen.
 class AuthProfileCompleted extends AuthEvent {}
 
 class _UserChanged extends AuthEvent {

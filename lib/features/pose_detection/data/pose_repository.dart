@@ -23,18 +23,13 @@ class PoseRepository {
       'timestamp': FieldValue.serverTimestamp(),
     };
 
-    // Save to user's sessions subcollection
     await _firestore
         .collection(AppConstants.usersCollection)
         .doc(uid)
         .collection(AppConstants.sessionsCollection)
         .add(sessionData);
 
-    // Update user's total stats (optional but good for AI Twin)
-    await _firestore
-        .collection(AppConstants.usersCollection)
-        .doc(uid)
-        .set({
+    await _firestore.collection(AppConstants.usersCollection).doc(uid).set({
       'totalReps': FieldValue.increment(reps),
       'totalSessions': FieldValue.increment(1),
       'lastActive': FieldValue.serverTimestamp(),

@@ -22,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Load today's water intake when home screen opens
+
     context.read<WaterIntakeCubit>().loadToday();
   }
 
@@ -34,7 +34,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Reload water intake when app resumes (handles midnight reset)
     if (state == AppLifecycleState.resumed) {
       context.read<WaterIntakeCubit>().loadToday();
     }
@@ -47,8 +46,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Good ${_greeting()}, $name 👋',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        title: Text(
+          'Good ${_greeting()}, $name 👋',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_outline),
@@ -66,24 +67,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // AI Health Twin Status (Quick view)
               _AIStatusCard(user?.uid),
               const SizedBox(height: 20),
 
-              // 💧 Water Intake Tracker
               const WaterIntakeCard(),
               const SizedBox(height: 20),
-              
-              // Start Workout CTA
+
               _StartWorkoutCard(context),
               const SizedBox(height: 24),
-              
-              Text('Quick Actions', style: Theme.of(context).textTheme.titleMedium),
+
+              Text(
+                'Quick Actions',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 16),
               _QuickActionsGrid(context),
               const SizedBox(height: 24),
-              
-              Text('Recent Activity', style: Theme.of(context).textTheme.titleMedium),
+
+              Text(
+                'Recent Activity',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 16),
               _RecentActivityList(user?.uid),
             ],
@@ -102,9 +106,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _AIStatusCard(String? uid) {
     if (uid == null) return const SizedBox.shrink();
-    
+
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance.collection(AppConstants.usersCollection).doc(uid).snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection(AppConstants.usersCollection)
+          .doc(uid)
+          .snapshots(),
       builder: (context, snapshot) {
         final data = snapshot.data?.data() as Map<String, dynamic>? ?? {};
         final sessions = data['totalSessions'] ?? 0;
@@ -119,16 +126,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
           child: Row(
             children: [
-              const Icon(Icons.psychology, color: Colors.purpleAccent, size: 32),
+              const Icon(
+                Icons.psychology,
+                color: Colors.purpleAccent,
+                size: 32,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('AI Health Twin', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purpleAccent)),
+                    const Text(
+                      'AI Health Twin',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purpleAccent,
+                      ),
+                    ),
                     Text(
-                      sessions > 0 ? 'Analyzing your $streak-day streak...' : 'Complete a workout to activate AI Twin',
-                      style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                      sessions > 0
+                          ? 'Analyzing your $streak-day streak...'
+                          : 'Complete a workout to activate AI Twin',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -179,7 +201,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             const SizedBox(height: 4),
             Text(
               'AI will analyze your form in real-time',
-              style: TextStyle(color: Colors.black.withOpacity(0.7), fontSize: 14),
+              style: TextStyle(
+                color: Colors.black.withOpacity(0.7),
+                fontSize: 14,
+              ),
             ),
           ],
         ),
@@ -189,8 +214,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _QuickActionsGrid(BuildContext context) {
     final actions = [
-      {'icon': Icons.auto_awesome, 'label': 'AI Plans', 'route': '/plans', 'color': AppTheme.secondary},
-      {'icon': Icons.history, 'label': 'History', 'route': '/history', 'color': AppTheme.primary},
+      {
+        'icon': Icons.auto_awesome,
+        'label': 'AI Plans',
+        'route': '/plans',
+        'color': AppTheme.secondary,
+      },
+      {
+        'icon': Icons.history,
+        'label': 'History',
+        'route': '/history',
+        'color': AppTheme.primary,
+      },
     ];
 
     return Row(
@@ -209,7 +244,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(a['icon'] as IconData, color: a['color'] as Color, size: 28),
+                  Icon(
+                    a['icon'] as IconData,
+                    color: a['color'] as Color,
+                    size: 28,
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     a['label'] as String,
@@ -246,7 +285,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         return Column(
           children: snapshot.data!.docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
-            final timestamp = data['timestamp'] != null ? (data['timestamp'] as Timestamp).toDate() : DateTime.now();
+            final timestamp = data['timestamp'] != null
+                ? (data['timestamp'] as Timestamp).toDate()
+                : DateTime.now();
             final exercise = data['exercise'] as String? ?? 'Workout';
             final score = data['score'] as int? ?? 0;
 
@@ -266,15 +307,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       color: AppTheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.fitness_center, color: AppTheme.primary, size: 20),
+                    child: const Icon(
+                      Icons.fitness_center,
+                      color: AppTheme.primary,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(exercise.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text(DateFormat('MMM dd • HH:mm').format(timestamp), style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                        Text(
+                          exercise.toUpperCase(),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Text(
+                          DateFormat('MMM dd • HH:mm').format(timestamp),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -282,7 +339,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     'Form: $score%',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: score >= 80 ? AppTheme.secondary : (score >= 50 ? AppTheme.primary : AppTheme.error),
+                      color: score >= 80
+                          ? AppTheme.secondary
+                          : (score >= 50 ? AppTheme.primary : AppTheme.error),
                     ),
                   ),
                 ],
@@ -307,8 +366,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         children: [
           Icon(Icons.fitness_center, color: AppTheme.textSecondary, size: 40),
           SizedBox(height: 12),
-          Text('No workouts yet', style: TextStyle(color: AppTheme.textSecondary)),
-          Text('Complete your first session to see activity', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12), textAlign: TextAlign.center),
+          Text(
+            'No workouts yet',
+            style: TextStyle(color: AppTheme.textSecondary),
+          ),
+          Text(
+            'Complete your first session to see activity',
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );

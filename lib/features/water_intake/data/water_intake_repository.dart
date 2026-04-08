@@ -21,7 +21,6 @@ class WaterIntakeRepository {
         .doc(_todayKey);
   }
 
-  /// Fetches today's water intake (or creates a default entry).
   Future<WaterIntake> getTodayIntake() async {
     final doc = _todayDoc();
     if (doc == null) return WaterIntake(date: _todayKey);
@@ -30,16 +29,17 @@ class WaterIntakeRepository {
       final snapshot = await doc
           .get(const GetOptions(source: Source.serverAndCache))
           .timeout(
-        const Duration(seconds: 6),
-        onTimeout: () => doc.get(const GetOptions(source: Source.cache)),
-      );
+            const Duration(seconds: 6),
+            onTimeout: () => doc.get(const GetOptions(source: Source.cache)),
+          );
 
       if (snapshot.exists) {
         return WaterIntake.fromJson(
-            snapshot.data() as Map<String, dynamic>, _todayKey);
+          snapshot.data() as Map<String, dynamic>,
+          _todayKey,
+        );
       }
 
-      // Also read user's custom goal from their profile
       final goal = await _getUserGoal();
       return WaterIntake(date: _todayKey, goal: goal);
     } catch (e) {
@@ -48,7 +48,6 @@ class WaterIntakeRepository {
     }
   }
 
-  /// Adds one glass to today's count.
   Future<WaterIntake> addGlass() async {
     final doc = _todayDoc();
     if (doc == null) return WaterIntake(date: _todayKey);
@@ -62,14 +61,15 @@ class WaterIntakeRepository {
 
       final snapshot = await doc.get();
       return WaterIntake.fromJson(
-          snapshot.data() as Map<String, dynamic>, _todayKey);
+        snapshot.data() as Map<String, dynamic>,
+        _todayKey,
+      );
     } catch (e) {
       debugPrint('⚠️ addGlass error: $e');
       return await getTodayIntake();
     }
   }
 
-  /// Removes one glass from today's count (min 0).
   Future<WaterIntake> removeGlass() async {
     final doc = _todayDoc();
     if (doc == null) return WaterIntake(date: _todayKey);
@@ -89,7 +89,6 @@ class WaterIntakeRepository {
     }
   }
 
-  /// Reads the user's daily water goal from their profile (defaults to 8).
   Future<int> _getUserGoal() async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return 8;

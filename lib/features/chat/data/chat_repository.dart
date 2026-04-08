@@ -2,15 +2,16 @@ import 'package:dio/dio.dart';
 import '../../../core/constants/app_constants.dart';
 
 class ChatRepository {
-  late final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'https://api.groq.com',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ${AppConstants.groqApiKey}',
-    },
-  ));
+  late final Dio _dio = Dio(
+    BaseOptions(
+      baseUrl: 'https://api.groq.com',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${AppConstants.groqApiKey}',
+      },
+    ),
+  );
 
-  /// Sends the conversation so far and returns the AI's reply text.
   Future<String> sendMessage({
     required List<Map<String, String>> conversationHistory,
   }) async {

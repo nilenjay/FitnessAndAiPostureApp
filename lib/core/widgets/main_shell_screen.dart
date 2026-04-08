@@ -37,11 +37,26 @@ class MainShellScreen extends StatelessWidget {
           type: BottomNavigationBarType.fixed,
           onTap: (i) => context.go(_tabs[i]),
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.videocam_outlined), label: 'Train'),
-            BottomNavigationBarItem(icon: Icon(Icons.auto_awesome_outlined), label: 'Plans'),
-            BottomNavigationBarItem(icon: Icon(Icons.history_outlined), label: 'History'),
-            BottomNavigationBarItem(icon: Icon(Icons.smart_toy_outlined), label: 'AI Chat'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.videocam_outlined),
+              label: 'Train',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.auto_awesome_outlined),
+              label: 'Plans',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.history_outlined),
+              label: 'History',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.smart_toy_outlined),
+              label: 'AI Chat',
+            ),
           ],
         ),
       ),

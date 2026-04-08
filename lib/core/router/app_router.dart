@@ -33,7 +33,8 @@ class AppRouter {
         final isAuthenticated = authState is AuthAuthenticated;
         final location = state.uri.path;
 
-        final isOnAuthScreen = location == '/login' ||
+        final isOnAuthScreen =
+            location == '/login' ||
             location == '/signup' ||
             location == '/splash';
 
@@ -45,17 +46,14 @@ class AppRouter {
           return '/login';
         }
 
-        // ── Profile onboarding redirect ──────────────────────────────────
         if (isAuthenticated) {
           final profileComplete =
               (authState as AuthAuthenticated).profileComplete;
 
-          // New user hasn't completed profile → force setup
           if (!profileComplete && location != '/profile/setup') {
             return '/profile/setup';
           }
 
-          // Profile is complete → don't let them back to auth or setup
           if (profileComplete &&
               (location == '/login' ||
                   location == '/signup' ||
@@ -80,14 +78,12 @@ class AppRouter {
           builder: (context, state) => const SignupScreen(),
         ),
 
-        // Profile onboarding (full-screen, no bottom nav)
         GoRoute(
           path: '/profile/setup',
           builder: (context, state) =>
               const ProfileSetupScreen(isOnboarding: true),
         ),
 
-        // Shell route: screens that share the bottom navigation bar
         ShellRoute(
           navigatorKey: _shellNavigatorKey,
           builder: (context, state, child) => MainShellScreen(child: child),
@@ -115,7 +111,6 @@ class AppRouter {
           ],
         ),
 
-        // Full-screen routes (no bottom nav)
         GoRoute(
           path: '/workout/session',
           builder: (context, state) {
@@ -139,16 +134,12 @@ class AppRouter {
           builder: (context, state) => const ProfileSetupScreen(),
         ),
       ],
-      errorBuilder: (context, state) => Scaffold(
-        body: Center(
-          child: Text('Page not found: ${state.error}'),
-        ),
-      ),
+      errorBuilder: (context, state) =>
+          Scaffold(body: Center(child: Text('Page not found: ${state.error}'))),
     );
   }
 }
 
-// ✅ Properly wired to AuthBloc stream — fires on every auth state change
 class _AuthChangeNotifier extends ChangeNotifier {
   final AuthBloc _authBloc;
   late final StreamSubscription _subscription;

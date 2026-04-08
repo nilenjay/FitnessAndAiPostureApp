@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Brand Colors
-  static const Color primary = Color(0xFF00E5FF);       // Electric cyan
-  static const Color secondary = Color(0xFF76FF03);     // Neon green
-  static const Color background = Color(0xFF0A0A0F);    // Deep dark
-  static const Color surface = Color(0xFF13131A);       // Card surface
-  static const Color surfaceVariant = Color(0xFF1E1E2E); // Elevated surface
+  static const Color primary = Color(0xFF00E5FF);
+  static const Color secondary = Color(0xFF76FF03);
+  static const Color background = Color(0xFF0A0A0F);
+  static const Color surface = Color(0xFF13131A);
+  static const Color surfaceVariant = Color(0xFF1E1E2E);
   static const Color error = Color(0xFFFF4444);
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFF9E9EAE);
@@ -69,16 +68,16 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surfaceVariant,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: divider),
@@ -100,21 +99,31 @@ class AppTheme {
       ),
       textTheme: const TextTheme(
         displayLarge: TextStyle(
-          color: textPrimary, fontSize: 32, fontWeight: FontWeight.w800,
+          color: textPrimary,
+          fontSize: 32,
+          fontWeight: FontWeight.w800,
         ),
         displayMedium: TextStyle(
-          color: textPrimary, fontSize: 26, fontWeight: FontWeight.w700,
+          color: textPrimary,
+          fontSize: 26,
+          fontWeight: FontWeight.w700,
         ),
         titleLarge: TextStyle(
-          color: textPrimary, fontSize: 20, fontWeight: FontWeight.w700,
+          color: textPrimary,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
         ),
         titleMedium: TextStyle(
-          color: textPrimary, fontSize: 16, fontWeight: FontWeight.w600,
+          color: textPrimary,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
         ),
         bodyLarge: TextStyle(color: textPrimary, fontSize: 16),
         bodyMedium: TextStyle(color: textSecondary, fontSize: 14),
         labelLarge: TextStyle(
-          color: textPrimary, fontSize: 14, fontWeight: FontWeight.w600,
+          color: textPrimary,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
         ),
       ),
       dividerTheme: const DividerThemeData(color: divider, thickness: 1),

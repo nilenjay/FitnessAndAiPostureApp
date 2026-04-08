@@ -44,9 +44,9 @@ class _LoginScreenState extends State<LoginScreen> {
           if (state is AuthAuthenticated) {
             context.go('/home');
           } else if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
           }
         },
         child: SafeArea(
@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 60),
-                // Logo / Brand
+
                 Center(
                   child: Container(
                     width: 72,
@@ -64,7 +64,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: BoxDecoration(
                       color: AppTheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+                      border: Border.all(
+                        color: AppTheme.primary.withOpacity(0.3),
+                      ),
                     ),
                     child: const Icon(
                       Icons.fitness_center,
@@ -74,7 +76,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                Text('Welcome back', style: Theme.of(context).textTheme.displayMedium),
+                Text(
+                  'Welcome back',
+                  style: Theme.of(context).textTheme.displayMedium,
+                ),
                 const SizedBox(height: 8),
                 Text(
                   'Sign in to continue your fitness journey',
@@ -92,8 +97,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           hintText: 'Email address',
                           prefixIcon: Icon(Icons.email_outlined, size: 20),
                         ),
-                        validator: (v) =>
-                        v == null || !v.contains('@') ? 'Enter a valid email' : null,
+                        validator: (v) => v == null || !v.contains('@')
+                            ? 'Enter a valid email'
+                            : null,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
@@ -109,20 +115,24 @@ class _LoginScreenState extends State<LoginScreen> {
                                   : Icons.visibility_outlined,
                               size: 20,
                             ),
-                            onPressed: () =>
-                                setState(() => _obscurePassword = !_obscurePassword),
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
                           ),
                         ),
-                        validator: (v) =>
-                        v == null || v.length < 6 ? 'Min 6 characters' : null,
+                        validator: (v) => v == null || v.length < 6
+                            ? 'Min 6 characters'
+                            : null,
                       ),
                       const SizedBox(height: 12),
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () {/* TODO: forgot password */},
-                          child: const Text('Forgot password?',
-                              style: TextStyle(color: AppTheme.primary)),
+                          onPressed: () {},
+                          child: const Text(
+                            'Forgot password?',
+                            style: TextStyle(color: AppTheme.primary),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -132,13 +142,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: state is AuthLoading ? null : _onLogin,
                             child: state is AuthLoading
                                 ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.black,
-                              ),
-                            )
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.black,
+                                    ),
+                                  )
                                 : const Text('Sign In'),
                           );
                         },

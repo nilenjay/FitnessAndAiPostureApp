@@ -1,7 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// ─── Diet Plan ──────────────────────────────────────────────────────────────
-
 class DietPlan {
   final int calories;
   final int proteinG;
@@ -47,8 +45,8 @@ class DietPlan {
 }
 
 class MealSuggestion {
-  final String name;       // e.g. "Breakfast"
-  final String example;   // e.g. "Oatmeal with banana and 3 eggs"
+  final String name;
+  final String example;
   final int calories;
   final int proteinG;
 
@@ -76,8 +74,6 @@ class MealSuggestion {
   };
 }
 
-// ─── Workout Plan ───────────────────────────────────────────────────────────
-
 class WorkoutPlan {
   final String id;
   final String goal;
@@ -86,7 +82,7 @@ class WorkoutPlan {
   final String equipment;
   final List<WorkoutDay> days;
   final DateTime createdAt;
-  final DietPlan? dietPlan; // ← new
+  final DietPlan? dietPlan;
 
   WorkoutPlan({
     required this.id,

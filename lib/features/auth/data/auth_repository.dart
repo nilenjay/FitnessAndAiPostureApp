@@ -6,7 +6,6 @@ class AuthRepository {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Stream of auth state changes
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 
   User? get currentUser => _firebaseAuth.currentUser;
@@ -21,22 +20,20 @@ class AuthRepository {
       password: password,
     );
 
-    // Update display name
     await credential.user?.updateDisplayName(name);
 
-    // Create Firestore user document
     await _firestore
         .collection(AppConstants.usersCollection)
         .doc(credential.user!.uid)
         .set({
-      'uid': credential.user!.uid,
-      'name': name,
-      'email': email,
-      'createdAt': FieldValue.serverTimestamp(),
-      'totalSessions': 0,
-      'streak': 0,
-      'profileComplete': false,
-    });
+          'uid': credential.user!.uid,
+          'name': name,
+          'email': email,
+          'createdAt': FieldValue.serverTimestamp(),
+          'totalSessions': 0,
+          'streak': 0,
+          'profileComplete': false,
+        });
 
     return credential;
   }
@@ -51,7 +48,6 @@ class AuthRepository {
     );
   }
 
-  /// Check if the user has completed their profile setup.
   Future<bool> isProfileComplete(String uid) async {
     try {
       final doc = await _firestore
@@ -59,12 +55,12 @@ class AuthRepository {
           .doc(uid)
           .get(const GetOptions(source: Source.serverAndCache))
           .timeout(
-        const Duration(seconds: 6),
-        onTimeout: () => _firestore
-            .collection(AppConstants.usersCollection)
-            .doc(uid)
-            .get(const GetOptions(source: Source.cache)),
-      );
+            const Duration(seconds: 6),
+            onTimeout: () => _firestore
+                .collection(AppConstants.usersCollection)
+                .doc(uid)
+                .get(const GetOptions(source: Source.cache)),
+          );
       if (doc.exists) {
         return doc.data()?['profileComplete'] == true;
       }

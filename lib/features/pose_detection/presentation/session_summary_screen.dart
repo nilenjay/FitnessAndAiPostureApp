@@ -21,7 +21,6 @@ class SessionSummaryScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Score Card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
@@ -57,25 +56,39 @@ class SessionSummaryScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Stats Row
             Row(
               children: [
-                Expanded(child: _StatCard(label: 'Reps', value: '$reps', icon: Icons.repeat, color: AppTheme.primary)),
+                Expanded(
+                  child: _StatCard(
+                    label: 'Reps',
+                    value: '$reps',
+                    icon: Icons.repeat,
+                    color: AppTheme.primary,
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: _StatCard(label: 'Score', value: '$score/100', icon: Icons.star_outline, color: color)),
+                Expanded(
+                  child: _StatCard(
+                    label: 'Score',
+                    value: '$score/100',
+                    icon: Icons.star_outline,
+                    color: color,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 24),
 
-            // Feedback
             if (feedbackList.isNotEmpty) ...[
-              Text('AI Feedback', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'AI Feedback',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 12),
               ...feedbackList.map((f) => _FeedbackTile(feedback: f.toString())),
               const SizedBox(height: 24),
             ],
 
-            // Actions
             ElevatedButton(
               onPressed: () => context.go('/workout/select'),
               child: const Text('Start Another Workout'),
@@ -110,7 +123,12 @@ class _StatCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color color;
-  const _StatCard({required this.label, required this.value, required this.icon, required this.color});
+  const _StatCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -126,9 +144,19 @@ class _StatCard extends StatelessWidget {
         children: [
           Icon(icon, color: color, size: 24),
           const SizedBox(height: 12),
-          Text(value, style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.w800)),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+          Text(
+            label,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+          ),
         ],
       ),
     );
@@ -141,7 +169,8 @@ class _FeedbackTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPositive = feedback.toLowerCase().contains('good') ||
+    final isPositive =
+        feedback.toLowerCase().contains('good') ||
         feedback.toLowerCase().contains('great') ||
         feedback.toLowerCase().contains('rep');
 

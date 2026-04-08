@@ -47,31 +47,30 @@ class PosePainter extends CustomPainter {
   }
 
   void _drawBones(
-      Canvas canvas,
-      Pose pose,
-      Size size,
-      Paint bonePaint,
-      Paint errorPaint,
-      ) {
+    Canvas canvas,
+    Pose pose,
+    Size size,
+    Paint bonePaint,
+    Paint errorPaint,
+  ) {
     final connections = [
-      // Torso
       [PoseLandmarkType.leftShoulder, PoseLandmarkType.rightShoulder],
       [PoseLandmarkType.leftShoulder, PoseLandmarkType.leftHip],
       [PoseLandmarkType.rightShoulder, PoseLandmarkType.rightHip],
       [PoseLandmarkType.leftHip, PoseLandmarkType.rightHip],
-      // Left arm
+
       [PoseLandmarkType.leftShoulder, PoseLandmarkType.leftElbow],
       [PoseLandmarkType.leftElbow, PoseLandmarkType.leftWrist],
-      // Right arm
+
       [PoseLandmarkType.rightShoulder, PoseLandmarkType.rightElbow],
       [PoseLandmarkType.rightElbow, PoseLandmarkType.rightWrist],
-      // Left leg
+
       [PoseLandmarkType.leftHip, PoseLandmarkType.leftKnee],
       [PoseLandmarkType.leftKnee, PoseLandmarkType.leftAnkle],
-      // Right leg
+
       [PoseLandmarkType.rightHip, PoseLandmarkType.rightKnee],
       [PoseLandmarkType.rightKnee, PoseLandmarkType.rightAnkle],
-      // Face
+
       [PoseLandmarkType.leftEar, PoseLandmarkType.leftEye],
       [PoseLandmarkType.rightEar, PoseLandmarkType.rightEye],
       [PoseLandmarkType.leftEye, PoseLandmarkType.nose],
@@ -86,8 +85,7 @@ class PosePainter extends CustomPainter {
           end != null &&
           start.likelihood >= 0.5 &&
           end.likelihood >= 0.5) {
-        final startOffset =
-        _translateOffset(Offset(start.x, start.y), size);
+        final startOffset = _translateOffset(Offset(start.x, start.y), size);
         final endOffset = _translateOffset(Offset(end.x, end.y), size);
         canvas.drawLine(startOffset, endOffset, bonePaint);
       }
@@ -101,9 +99,6 @@ class PosePainter extends CustomPainter {
     double x = point.dx * scaleX;
     double y = point.dy * scaleY;
 
-    // Back camera: ML Kit coordinates are mirrored → un-mirror them.
-    // Front camera: ML Kit already returns natural (mirror) coordinates
-    //               matching what the user sees on screen → no transform needed.
     if (cameraLensDirection == CameraLensDirection.back) {
       x = size.width - x;
     }

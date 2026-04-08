@@ -11,8 +11,8 @@ class WorkoutPlanBloc extends Bloc<WorkoutPlanEvent, WorkoutPlanState> {
   final WorkoutPlanRepository _repository;
 
   WorkoutPlanBloc({required WorkoutPlanRepository repository})
-      : _repository = repository,
-        super(WorkoutPlanInitial()) {
+    : _repository = repository,
+      super(WorkoutPlanInitial()) {
     on<WorkoutPlanGenerate>(_onGenerate);
     on<WorkoutPlanFetch>(_onFetch);
     on<WorkoutPlanDelete>(_onDelete);
@@ -20,12 +20,11 @@ class WorkoutPlanBloc extends Bloc<WorkoutPlanEvent, WorkoutPlanState> {
   }
 
   Future<void> _onGenerate(
-      WorkoutPlanGenerate event,
-      Emitter<WorkoutPlanState> emit,
-      ) async {
-    // Preserve existing plans to avoid unnecessary Firestore read deadlocks
-    final oldPlans = state is WorkoutPlanLoaded 
-        ? (state as WorkoutPlanLoaded).plans 
+    WorkoutPlanGenerate event,
+    Emitter<WorkoutPlanState> emit,
+  ) async {
+    final oldPlans = state is WorkoutPlanLoaded
+        ? (state as WorkoutPlanLoaded).plans
         : <WorkoutPlan>[];
 
     emit(WorkoutPlanGenerating());
@@ -38,16 +37,12 @@ class WorkoutPlanBloc extends Bloc<WorkoutPlanEvent, WorkoutPlanState> {
       );
       emit(WorkoutPlanGenerated(plan));
 
-      // Append to the list natively without doing a Firestore fetch
       final localPlans = List<WorkoutPlan>.from(oldPlans);
       if (!localPlans.any((p) => p.id == plan.id)) {
         localPlans.insert(0, plan);
       }
 
-      emit(WorkoutPlanLoaded(
-        plans: localPlans,
-        selectedPlan: plan,
-      ));
+      emit(WorkoutPlanLoaded(plans: localPlans, selectedPlan: plan));
     } catch (e) {
       debugPrint('❌ Plan generation failed: $e');
       emit(WorkoutPlanError('Failed to generate plan: ${e.toString()}'));
@@ -55,16 +50,18 @@ class WorkoutPlanBloc extends Bloc<WorkoutPlanEvent, WorkoutPlanState> {
   }
 
   Future<void> _onFetch(
-      WorkoutPlanFetch event,
-      Emitter<WorkoutPlanState> emit,
-      ) async {
+    WorkoutPlanFetch event,
+    Emitter<WorkoutPlanState> emit,
+  ) async {
     emit(WorkoutPlanLoading());
     try {
       final plans = await _repository.fetchSavedPlans();
-      emit(WorkoutPlanLoaded(
-        plans: plans,
-        selectedPlan: plans.isNotEmpty ? plans.first : null,
-      ));
+      emit(
+        WorkoutPlanLoaded(
+          plans: plans,
+          selectedPlan: plans.isNotEmpty ? plans.first : null,
+        ),
+      );
     } catch (e) {
       debugPrint('❌ Fetch plans failed: $e');
       emit(WorkoutPlanError('Failed to load plans: ${e.toString()}'));
@@ -72,17 +69,19 @@ class WorkoutPlanBloc extends Bloc<WorkoutPlanEvent, WorkoutPlanState> {
   }
 
   Future<void> _onDelete(
-      WorkoutPlanDelete event,
-      Emitter<WorkoutPlanState> emit,
-      ) async {
+    WorkoutPlanDelete event,
+    Emitter<WorkoutPlanState> emit,
+  ) async {
     try {
       await _repository.deletePlan(event.planId);
-      // Fetch directly instead of add(WorkoutPlanFetch()) to avoid emit issues
+
       final plans = await _repository.fetchSavedPlans();
-      emit(WorkoutPlanLoaded(
-        plans: plans,
-        selectedPlan: plans.isNotEmpty ? plans.first : null,
-      ));
+      emit(
+        WorkoutPlanLoaded(
+          plans: plans,
+          selectedPlan: plans.isNotEmpty ? plans.first : null,
+        ),
+      );
     } catch (e) {
       debugPrint('❌ Delete failed: $e');
       emit(WorkoutPlanError('Failed to delete plan.'));
